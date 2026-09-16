@@ -6,8 +6,8 @@ spring:
     name: repayment-service
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/repayment_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -47,6 +47,8 @@ management:
   endpoint:
     health:
       show-details: never
+      probes:
+        enabled: true
 
 springdoc:
   api-docs:
