@@ -228,8 +228,35 @@ services:
     ports: ["9411:9411"]
     networks: [lms-net]
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: lms-prometheus
+    ports: ["9090:9090"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    depends_on:
+      - loan-service
+      - repayment-service
+    networks: [lms-net]
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    container_name: lms-grafana
+    ports: ["3000:3000"]
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks: [lms-net]
+
 volumes:
   mysql_data:
+  grafana_data:
+
 networks:
   lms-net:
     driver: bridge
