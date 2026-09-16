@@ -12,6 +12,7 @@ import com.loanmanagement.loan.dto.LoanRequestDto;
 import com.loanmanagement.loan.dto.LoanResponseDto;
 import com.loanmanagement.loan.entity.Loan;
 import com.loanmanagement.loan.entity.LoanStatus;
+import com.loanmanagement.loan.idempotency.IdempotencyService;
 import com.loanmanagement.loan.outbox.OutboxService;
 import com.loanmanagement.loan.repository.LoanRepository;
 import com.loanmanagement.loan.util.EmiCalculator;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,58 +33,32 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class LoanApplicationService {
-
     private final LoanRepository loanRepository;
     private final LoanStateMachine stateMachine;
     private final OutboxService outboxService;
     private final EmiCalculator emiCalculator;
     private final CustomerClient customerClient;
+    private final IdempotencyService idempotencyService;
 
     @Transactional
-    public LoanResponseDto apply(LoanRequestDto request) {
-        // Validate customer exists via inter-service call (Feign + Eureka)
+    public LoanResponseDto apply(LoanRequestDto request, String idempotencyKey, String requestHash) {
         validateCustomer(request.getCustomerId());
-
-        Loan loan = Loan.builder()
-                .customerId(request.getCustomerId())
-                .productId(request.getProductId())
-                .loanType(request.getLoanType())
-                .loanAmount(request.getLoanAmount())
-                .interestRate(request.getInterestRate())
-                .tenureMonths(request.getTenureMonths())
-                .remarks(request.getRemarks())
-                .loanStatus(LoanStatus.PENDING)
-                .outstandingPrincipal(request.getLoanAmount())
-                .remainingInstallments(request.getTenureMonths())
-                .build();
-
+        Loan loan = Loan.builder().customerId(request.getCustomerId()).productId(request.getProductId())
+                .loanType(request.getLoanType()).loanAmount(request.getLoanAmount()).interestRate(request.getInterestRate())
+                .tenureMonths(request.getTenureMonths()).remarks(request.getRemarks()).loanStatus(LoanStatus.PENDING)
+                .outstandingPrincipal(request.getLoanAmount()).remainingInstallments(request.getTenureMonths()).build();
         loan = loanRepository.save(loan);
-        log.info("Loan applied: id={}, customer={}", loan.getLoanId(), loan.getCustomerId());
-
-        // Publish domain event via outbox
-        LoanEventPayload payload = LoanEventPayload.builder()
-                .loanId(loan.getLoanId())
-                .customerId(loan.getCustomerId())
-                .status(loan.getLoanStatus().name())
-                .loanAmount(loan.getLoanAmount())
-                .tenureMonths(loan.getTenureMonths())
-                .applicationDate(loan.getApplicationDate())
-                .build();
-
-        outboxService.enqueue(DomainEvent.of(
-                LoanEvents.LOAN_APPLIED,
-                loan.getLoanId().toString(),
-                "Loan",
-                payload
-        ));
-
-        return toDto(loan);
+        LoanEventPayload payload = LoanEventPayload.builder().loanId(loan.getLoanId()).customerId(loan.getCustomerId())
+                .status(loan.getLoanStatus().name()).loanAmount(loan.getLoanAmount()).tenureMonths(loan.getTenureMonths())
+                .applicationDate(loan.getApplicationDate()).build();
+        outboxService.enqueue(DomainEvent.of(LoanEvents.LOAN_APPLIED, loan.getLoanId().toString(), "Loan", payload));
+        LoanResponseDto response = toDto(loan);
+        idempotencyService.save(idempotencyKey, requestHash, response);
+        return response;
     }
 
     @Transactional(readOnly = true)
-    public LoanResponseDto getById(Long loanId) {
-        return toDto(findLoan(loanId));
-    }
+    public LoanResponseDto getById(Long loanId) { return toDto(findLoan(loanId)); }
 
     @Transactional(readOnly = true)
     public Page<LoanResponseDto> getByCustomer(Long customerId, Pageable pageable) {
@@ -92,139 +68,58 @@ public class LoanApplicationService {
     @Transactional
     public LoanResponseDto approveLevel1(Long loanId, String approvedBy, String remarks) {
         Loan loan = findLoan(loanId);
-        if (loan.getLoanStatus() != LoanStatus.PENDING) {
-            throw new IllegalStateException("Level-1 approval only allowed in PENDING state");
-        }
-        if (loan.getLevel1ApprovedBy() != null) {
-            throw new IllegalStateException("Level-1 already approved");
-        }
-
-        loan.setLevel1ApprovedBy(approvedBy);
-        loan.setLevel1ApprovedAt(LocalDateTime.now());
-        if (remarks != null) {
-            loan.setRemarks(remarks);
-        }
-        // Status remains PENDING until Level-2
-        loan = loanRepository.save(loan);
-        log.info("Level-1 approved for loan {} by {}", loanId, approvedBy);
-        return toDto(loan);
+        if (loan.getLoanStatus() != LoanStatus.PENDING) throw new IllegalStateException("Level-1 approval only allowed in PENDING state");
+        if (loan.getLevel1ApprovedBy() != null) throw new IllegalStateException("Level-1 already approved");
+        loan.setLevel1ApprovedBy(approvedBy); loan.setLevel1ApprovedAt(LocalDateTime.now());
+        if (remarks != null) loan.setRemarks(remarks);
+        return toDto(loanRepository.save(loan));
     }
 
     @Transactional
     public LoanResponseDto approveLevel2(Long loanId, String approvedBy, String remarks) {
         Loan loan = findLoan(loanId);
-        if (loan.getLevel1ApprovedBy() == null) {
-            throw new IllegalStateException("Level-1 approval required before Level-2");
-        }
-
+        if (loan.getLevel1ApprovedBy() == null) throw new IllegalStateException("Level-1 approval required before Level-2");
         stateMachine.validateTransition(loan.getLoanStatus(), LoanStatus.APPROVED);
-
-        loan.setLevel2ApprovedBy(approvedBy);
-        loan.setLevel2ApprovedAt(LocalDateTime.now());
-        loan.setLoanStatus(LoanStatus.APPROVED);
-
-        // Calculate EMI
-        BigDecimal emi = emiCalculator.calculate(loan.getLoanAmount(), loan.getInterestRate(), loan.getTenureMonths());
-        loan.setEmi(emi);
-
-        if (remarks != null) {
-            loan.setRemarks(remarks);
-        }
+        loan.setLevel2ApprovedBy(approvedBy); loan.setLevel2ApprovedAt(LocalDateTime.now()); loan.setLoanStatus(LoanStatus.APPROVED);
+        loan.setEmi(emiCalculator.calculate(loan.getLoanAmount(), loan.getInterestRate(), loan.getTenureMonths()));
+        if (remarks != null) loan.setRemarks(remarks);
         loan = loanRepository.save(loan);
-
-        LoanEventPayload payload = LoanEventPayload.builder()
-                .loanId(loan.getLoanId())
-                .customerId(loan.getCustomerId())
-                .status(LoanStatus.APPROVED.name())
-                .previousStatus(LoanStatus.PENDING.name())
-                .loanAmount(loan.getLoanAmount())
-                .emi(loan.getEmi())
-                .tenureMonths(loan.getTenureMonths())
-                .approvedBy(approvedBy)
-                .build();
-
-        outboxService.enqueue(DomainEvent.of(
-                LoanEvents.LOAN_APPROVED,
-                loan.getLoanId().toString(),
-                "Loan",
-                payload
-        ));
-
-        log.info("Level-2 approved (APPROVED) for loan {} by {}", loanId, approvedBy);
+        outboxService.enqueue(DomainEvent.of(LoanEvents.LOAN_APPROVED, loan.getLoanId().toString(), "Loan",
+                LoanEventPayload.builder().loanId(loan.getLoanId()).customerId(loan.getCustomerId()).status(LoanStatus.APPROVED.name())
+                        .previousStatus(LoanStatus.PENDING.name()).loanAmount(loan.getLoanAmount()).emi(loan.getEmi())
+                        .tenureMonths(loan.getTenureMonths()).approvedBy(approvedBy).build()));
         return toDto(loan);
     }
 
     @Transactional
     public LoanResponseDto reject(Long loanId, String rejectedBy, String remarks) {
-        Loan loan = findLoan(loanId);
-        stateMachine.validateTransition(loan.getLoanStatus(), LoanStatus.REJECTED);
-
-        String previous = loan.getLoanStatus().name();
-        loan.setLoanStatus(LoanStatus.REJECTED);
-        loan.setRemarks(remarks != null ? remarks : "Rejected by " + rejectedBy);
-        loan = loanRepository.save(loan);
-
-        outboxService.enqueue(DomainEvent.of(
-                LoanEvents.LOAN_REJECTED,
-                loan.getLoanId().toString(),
-                "Loan",
-                LoanEventPayload.builder()
-                        .loanId(loan.getLoanId())
-                        .customerId(loan.getCustomerId())
-                        .status(LoanStatus.REJECTED.name())
-                        .previousStatus(previous)
-                        .remarks(loan.getRemarks())
-                        .build()
-        ));
-
+        Loan loan = findLoan(loanId); stateMachine.validateTransition(loan.getLoanStatus(), LoanStatus.REJECTED);
+        String previous = loan.getLoanStatus().name(); loan.setLoanStatus(LoanStatus.REJECTED);
+        loan.setRemarks(remarks != null ? remarks : "Rejected by " + rejectedBy); loan = loanRepository.save(loan);
+        outboxService.enqueue(DomainEvent.of(LoanEvents.LOAN_REJECTED, loan.getLoanId().toString(), "Loan",
+                LoanEventPayload.builder().loanId(loan.getLoanId()).customerId(loan.getCustomerId()).status(LoanStatus.REJECTED.name())
+                        .previousStatus(previous).remarks(loan.getRemarks()).build()));
         return toDto(loan);
     }
 
     private void validateCustomer(Long customerId) {
-        if (customerId == null) {
-            throw new DomainException("Customer ID is required");
-        }
+        if (customerId == null) throw new DomainException("Customer ID is required");
         try {
             ApiResponse<Map<String, Object>> response = customerClient.getById(customerId);
-            if (response == null || response.getData() == null) {
-                throw new ResourceNotFoundException("Customer", customerId);
-            }
-            log.debug("Customer {} validated via customer-service", customerId);
-        } catch (FeignException.NotFound e) {
-            throw new ResourceNotFoundException("Customer", customerId);
-        } catch (FeignException e) {
-            log.error("Failed to validate customer {}: {}", customerId, e.getMessage());
-            throw new DomainException("Unable to validate customer. Please try again later.");
-        }
+            if (response == null || response.getData() == null) throw new ResourceNotFoundException("Customer", customerId);
+        } catch (FeignException.NotFound e) { throw new ResourceNotFoundException("Customer", customerId); }
+        catch (FeignException e) { log.error("Failed to validate customer {}: {}", customerId, e.getMessage()); throw new DomainException("Unable to validate customer. Please try again later."); }
     }
 
-    private Loan findLoan(Long id) {
-        return loanRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan", id));
-    }
+    private Loan findLoan(Long id) { return loanRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Loan", id)); }
 
     private LoanResponseDto toDto(Loan loan) {
-        return LoanResponseDto.builder()
-                .loanId(loan.getLoanId())
-                .customerId(loan.getCustomerId())
-                .productId(loan.getProductId())
-                .loanType(loan.getLoanType())
-                .loanAmount(loan.getLoanAmount())
-                .interestRate(loan.getInterestRate())
-                .tenureMonths(loan.getTenureMonths())
-                .emi(loan.getEmi())
-                .loanStatus(loan.getLoanStatus())
-                .applicationDate(loan.getApplicationDate())
-                .remarks(loan.getRemarks())
-                .outstandingPrincipal(loan.getOutstandingPrincipal())
-                .paidInstallments(loan.getPaidInstallments())
-                .remainingInstallments(loan.getRemainingInstallments())
-                .disbursementDate(loan.getDisbursementDate())
-                .nextDueDate(loan.getNextDueDate())
-                .level1ApprovedBy(loan.getLevel1ApprovedBy())
-                .level1ApprovedAt(loan.getLevel1ApprovedAt())
-                .level2ApprovedBy(loan.getLevel2ApprovedBy())
-                .level2ApprovedAt(loan.getLevel2ApprovedAt())
-                .build();
+        return LoanResponseDto.builder().loanId(loan.getLoanId()).customerId(loan.getCustomerId()).productId(loan.getProductId())
+                .loanType(loan.getLoanType()).loanAmount(loan.getLoanAmount()).interestRate(loan.getInterestRate())
+                .tenureMonths(loan.getTenureMonths()).emi(loan.getEmi()).loanStatus(loan.getLoanStatus()).applicationDate(loan.getApplicationDate())
+                .remarks(loan.getRemarks()).outstandingPrincipal(loan.getOutstandingPrincipal()).paidInstallments(loan.getPaidInstallments())
+                .remainingInstallments(loan.getRemainingInstallments()).disbursementDate(loan.getDisbursementDate()).nextDueDate(loan.getNextDueDate())
+                .level1ApprovedBy(loan.getLevel1ApprovedBy()).level1ApprovedAt(loan.getLevel1ApprovedAt())
+                .level2ApprovedBy(loan.getLevel2ApprovedBy()).level2ApprovedAt(loan.getLevel2ApprovedAt()).build();
     }
 }
