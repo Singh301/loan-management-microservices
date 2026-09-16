@@ -1,12 +1,10 @@
 package com.loanmanagement.loan.service;
 
-import com.loanmanagement.common.dto.ApiResponse;
 import com.loanmanagement.common.event.DomainEvent;
 import com.loanmanagement.common.event.LoanEventPayload;
 import com.loanmanagement.common.event.LoanEvents;
 import com.loanmanagement.common.exception.DomainException;
 import com.loanmanagement.common.exception.ResourceNotFoundException;
-import com.loanmanagement.loan.client.CustomerClient;
 import com.loanmanagement.loan.domain.LoanStateMachine;
 import com.loanmanagement.loan.dto.LoanRequestDto;
 import com.loanmanagement.loan.dto.LoanResponseDto;
@@ -16,18 +14,15 @@ import com.loanmanagement.loan.idempotency.IdempotencyService;
 import com.loanmanagement.loan.outbox.OutboxService;
 import com.loanmanagement.loan.repository.LoanRepository;
 import com.loanmanagement.loan.util.EmiCalculator;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +32,7 @@ public class LoanApplicationService {
     private final LoanStateMachine stateMachine;
     private final OutboxService outboxService;
     private final EmiCalculator emiCalculator;
-    private final CustomerClient customerClient;
+    private final CustomerValidationService customerValidationService;
     private final IdempotencyService idempotencyService;
 
     @Transactional
@@ -60,8 +55,11 @@ public class LoanApplicationService {
 
     @Transactional(readOnly = true)
     public LoanResponseDto getById(Long loanId) { return toDto(findLoan(loanId)); }
+
     @Transactional(readOnly = true)
-    public Page<LoanResponseDto> getByCustomer(Long customerId, Pageable pageable) { return loanRepository.findByCustomerId(customerId, pageable).map(this::toDto); }
+    public Page<LoanResponseDto> getByCustomer(Long customerId, Pageable pageable) {
+        return loanRepository.findByCustomerId(customerId, pageable).map(this::toDto);
+    }
 
     @Transactional
     public LoanResponseDto approveLevel1(Long loanId, String approvedBy, String remarks) {
@@ -96,12 +94,11 @@ public class LoanApplicationService {
     }
 
     private void validateCustomer(Long customerId) {
-        if (customerId == null) throw new DomainException("Customer ID is required");
-        try { ApiResponse<Map<String, Object>> response = customerClient.getById(customerId); if (response == null || response.getData() == null) throw new ResourceNotFoundException("Customer", customerId); }
-        catch (FeignException.NotFound e) { throw new ResourceNotFoundException("Customer", customerId); }
-        catch (FeignException e) { log.error("Failed to validate customer {}: {}", customerId, e.getMessage()); throw new DomainException("Unable to validate customer. Please try again later."); }
+        customerValidationService.validate(customerId);
     }
+
     private Loan findLoan(Long id) { return loanRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Loan", id)); }
+
     private LoanResponseDto toDto(Loan loan) { return LoanResponseDto.builder().loanId(loan.getLoanId()).customerId(loan.getCustomerId()).productId(loan.getProductId())
             .loanType(loan.getLoanType()).loanAmount(loan.getLoanAmount()).interestRate(loan.getInterestRate()).tenureMonths(loan.getTenureMonths()).emi(loan.getEmi())
             .loanStatus(loan.getLoanStatus()).applicationDate(loan.getApplicationDate()).remarks(loan.getRemarks()).outstandingPrincipal(loan.getOutstandingPrincipal())
