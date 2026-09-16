@@ -2,6 +2,7 @@ package com.loanmanagement.loan.controller;
 
 import com.loanmanagement.common.dto.ApiResponse;
 import com.loanmanagement.common.dto.PageResponse;
+import com.loanmanagement.common.exception.DomainException;
 import com.loanmanagement.loan.dto.LoanRequestDto;
 import com.loanmanagement.loan.dto.LoanResponseDto;
 import com.loanmanagement.loan.entity.LoanStatus;
@@ -43,12 +44,16 @@ public class LoanController {
     @Operation(summary = "Apply for a new loan", description = "Idempotent using Idempotency-Key for 24 hours")
     public ResponseEntity<ApiResponse<LoanResponseDto>> apply(
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
-            @Valid @RequestBody LoanRequestDto request) {
+            @Valid @RequestBody LoanRequestDto request,
+            Authentication auth) {
         String key = idempotencyService.normalizeKey(idempotencyKey);
         String requestHash = idempotencyService.requestHash(request);
         LoanResponseDto existing = idempotencyService.findExisting(key, requestHash);
         if (existing != null) {
             return ResponseEntity.ok(ApiResponse.success("Existing loan application returned", existing));
+        }
+        if (hasRole(auth, "CUSTOMER")) {
+            assertCustomer(auth, request.getCustomerId());
         }
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Loan application submitted", applicationService.apply(request, key, requestHash)));
@@ -68,8 +73,10 @@ public class LoanController {
 
     @GetMapping("/{loanId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'MANAGER')")
-    public ResponseEntity<ApiResponse<LoanResponseDto>> getById(@PathVariable Long loanId) {
-        return ResponseEntity.ok(ApiResponse.success(applicationService.getById(loanId)));
+    public ResponseEntity<ApiResponse<LoanResponseDto>> getById(@PathVariable Long loanId, Authentication auth) {
+        LoanResponseDto loan = applicationService.getById(loanId);
+        assertCustomerIfRequired(auth, loan.getCustomerId());
+        return ResponseEntity.ok(ApiResponse.success(loan));
     }
 
     @GetMapping("/customer/{customerId}")
@@ -77,7 +84,9 @@ public class LoanController {
     public ResponseEntity<ApiResponse<PageResponse<LoanResponseDto>>> getByCustomer(
             @PathVariable Long customerId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            Authentication auth) {
+        assertCustomerIfRequired(auth, customerId);
         Page<LoanResponseDto> result = applicationService.getByCustomer(customerId, PageRequest.of(page, size));
         return page(result);
     }
@@ -134,15 +143,20 @@ public class LoanController {
     @GetMapping("/{loanId}/statement")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     @Operation(summary = "Loan statement")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> statement(@PathVariable Long loanId) {
-        return ResponseEntity.ok(ApiResponse.success(queryService.statement(loanId)));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> statement(@PathVariable Long loanId, Authentication auth) {
+        Map<String, Object> statement = queryService.statement(loanId);
+        assertCustomerIfRequired(auth, (Long) statement.get("customerId"));
+        return ResponseEntity.ok(ApiResponse.success(statement));
     }
 
     @GetMapping("/{loanId}/foreclosure")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     @Operation(summary = "Foreclosure amount details")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> foreclosure(@PathVariable Long loanId) {
-        return ResponseEntity.ok(ApiResponse.success(queryService.foreclosureDetails(loanId)));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> foreclosure(@PathVariable Long loanId, Authentication auth) {
+        Map<String, Object> details = queryService.foreclosureDetails(loanId);
+        LoanResponseDto loan = applicationService.getById(loanId);
+        assertCustomerIfRequired(auth, loan.getCustomerId());
+        return ResponseEntity.ok(ApiResponse.success(details));
     }
 
     @PutMapping("/{loanId}/approve/level1")
@@ -190,6 +204,24 @@ public class LoanController {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.<LoanResponseDto>builder()
                 .content(result.getContent()).page(result.getNumber()).size(result.getSize())
                 .totalElements(result.getTotalElements()).totalPages(result.getTotalPages()).last(result.isLast()).build()));
+    }
+
+    private void assertCustomerIfRequired(Authentication auth, Long customerId) {
+        if (hasRole(auth, "CUSTOMER")) {
+            assertCustomer(auth, customerId);
+        }
+    }
+
+    private void assertCustomer(Authentication auth, Long customerId) {
+        Long authenticatedCustomerId = extractCustomerId(auth);
+        if (!authenticatedCustomerId.equals(customerId)) {
+            throw new DomainException("Customers can access only their own loans", HttpStatus.FORBIDDEN, "LOAN_OWNERSHIP_DENIED");
+        }
+    }
+
+    private boolean hasRole(Authentication auth, String role) {
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
     }
 
     private Long extractCustomerId(Authentication auth) {
