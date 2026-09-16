@@ -80,7 +80,6 @@ docker compose up -d --build
 
 ```bash
 docker compose ps
-
 docker compose logs -f discovery-server
 ```
 
@@ -132,7 +131,13 @@ kubectl apply -f k8s/loan-services.yaml
 kubectl apply -f k8s/support-services.yaml
 ```
 
-The current Kubernetes application manifests expect `mysql`, `redis`, and `kafka` to be reachable in the cluster. For AWS production, map these endpoints to managed services such as RDS, ElastiCache and MSK rather than treating the application manifests as stateful-infrastructure manifests.
+For a disposable local Kubernetes environment, `k8s/dev-infrastructure.yaml` supplies MySQL, Redis, ZooKeeper and Kafka using non-persistent storage:
+
+```bash
+kubectl apply -f k8s/dev-infrastructure.yaml
+```
+
+Use that file only for development. For AWS production, map the application configuration to managed RDS, ElastiCache and MSK instead of using the disposable stateful manifests.
 
 ## Jenkins
 
