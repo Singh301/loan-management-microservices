@@ -6,6 +6,7 @@ import com.loanmanagement.loan.dto.LoanRequestDto;
 import com.loanmanagement.loan.dto.LoanResponseDto;
 import com.loanmanagement.loan.entity.LoanStatus;
 import com.loanmanagement.loan.entity.LoanType;
+import com.loanmanagement.loan.idempotency.IdempotencyService;
 import com.loanmanagement.loan.service.LoanApplicationService;
 import com.loanmanagement.loan.service.LoanDisbursementService;
 import com.loanmanagement.loan.service.LoanQueryService;
@@ -35,13 +36,22 @@ public class LoanController {
     private final LoanApplicationService applicationService;
     private final LoanDisbursementService disbursementService;
     private final LoanQueryService queryService;
+    private final IdempotencyService idempotencyService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN', 'MANAGER')")
-    @Operation(summary = "Apply for a new loan")
-    public ResponseEntity<ApiResponse<LoanResponseDto>> apply(@Valid @RequestBody LoanRequestDto request) {
+    @Operation(summary = "Apply for a new loan", description = "Idempotent using Idempotency-Key for 24 hours")
+    public ResponseEntity<ApiResponse<LoanResponseDto>> apply(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @Valid @RequestBody LoanRequestDto request) {
+        String key = idempotencyService.normalizeKey(idempotencyKey);
+        String requestHash = idempotencyService.requestHash(request);
+        LoanResponseDto existing = idempotencyService.findExisting(key, requestHash);
+        if (existing != null) {
+            return ResponseEntity.ok(ApiResponse.success("Existing loan application returned", existing));
+        }
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Loan application submitted", applicationService.apply(request)));
+                .body(ApiResponse.success("Loan application submitted", applicationService.apply(request, key, requestHash)));
     }
 
     @GetMapping
@@ -137,7 +147,6 @@ public class LoanController {
 
     @PutMapping("/{loanId}/approve/level1")
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
-    @Operation(summary = "Manager Level-1 approval")
     public ResponseEntity<ApiResponse<LoanResponseDto>> approveLevel1(
             @PathVariable Long loanId, @RequestParam(required = false) String remarks, Authentication auth) {
         return ResponseEntity.ok(ApiResponse.success("Level-1 approved",
@@ -146,7 +155,6 @@ public class LoanController {
 
     @PutMapping("/{loanId}/approve/level2")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Admin Level-2 approval → APPROVED + EMI")
     public ResponseEntity<ApiResponse<LoanResponseDto>> approveLevel2(
             @PathVariable Long loanId, @RequestParam(required = false) String remarks, Authentication auth) {
         return ResponseEntity.ok(ApiResponse.success("Loan approved",
@@ -174,44 +182,19 @@ public class LoanController {
 
     @PostMapping("/{loanId}/close")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Close loan after full repayment / foreclosure")
     public ResponseEntity<ApiResponse<LoanResponseDto>> close(@PathVariable Long loanId) {
         return ResponseEntity.ok(ApiResponse.success("Loan closed", queryService.closeLoan(loanId)));
     }
 
     private ResponseEntity<ApiResponse<PageResponse<LoanResponseDto>>> page(Page<LoanResponseDto> result) {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.<LoanResponseDto>builder()
-                .content(result.getContent())
-                .page(result.getNumber())
-                .size(result.getSize())
-                .totalElements(result.getTotalElements())
-                .totalPages(result.getTotalPages())
-                .last(result.isLast())
-                .build()));
+                .content(result.getContent()).page(result.getNumber()).size(result.getSize())
+                .totalElements(result.getTotalElements()).totalPages(result.getTotalPages()).last(result.isLast()).build()));
     }
 
-    /**
-     * Extract customerId from JWT principal.
-     * JwtAuthenticationFilter sets principal name as userId or username; for CUSTOMER role
-     * the claim "customerId" or userId is used. Adjust according to your JWT claims.
-     */
     private Long extractCustomerId(Authentication auth) {
-        if (auth == null || auth.getPrincipal() == null) {
-            throw new IllegalStateException("Unauthenticated");
-        }
-        Object principal = auth.getPrincipal();
-        if (principal instanceof org.springframework.security.core.userdetails.UserDetails ud) {
-            try {
-                return Long.parseLong(ud.getUsername());
-            } catch (NumberFormatException e) {
-                // username is not numeric – in real system map username → customerId via auth-service
-                throw new IllegalStateException("Unable to resolve customerId from token. Ensure JWT contains numeric user/customer id.");
-            }
-        }
-        try {
-            return Long.parseLong(auth.getName());
-        } catch (NumberFormatException e) {
-            throw new IllegalStateException("Unable to resolve customerId from token");
-        }
+        if (auth == null || auth.getPrincipal() == null) throw new IllegalStateException("Unauthenticated");
+        try { return Long.parseLong(auth.getName()); }
+        catch (NumberFormatException e) { throw new IllegalStateException("Unable to resolve customerId from token"); }
     }
 }
