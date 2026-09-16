@@ -1,6 +1,8 @@
 package com.loanmanagement.common.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
+    private static final String TOKEN_TYPE_CLAIM = "tokenType";
+    private static final String ACCESS_TOKEN = "ACCESS";
+    private static final String REFRESH_TOKEN = "REFRESH";
+    private static final String ROLES_CLAIM = "roles";
+    private static final String USER_ID_CLAIM = "userId";
+
     private final JwtProperties jwtProperties;
 
     private SecretKey key() {
@@ -28,8 +36,9 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(username)
                 .claims(Map.of(
-                        "userId", userId,
-                        "roles", roles
+                        USER_ID_CLAIM, userId,
+                        ROLES_CLAIM, roles,
+                        TOKEN_TYPE_CLAIM, ACCESS_TOKEN
                 ))
                 .issuedAt(now)
                 .expiration(expiry)
@@ -43,6 +52,7 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .subject(username)
+                .claim(TOKEN_TYPE_CLAIM, REFRESH_TOKEN)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key())
@@ -51,8 +61,25 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().verifyWith(key()).build().parseSignedClaims(token);
+            parseClaims(token);
             return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public boolean validateAccessToken(String token) {
+        return validateTokenType(token, ACCESS_TOKEN);
+    }
+
+    public boolean validateRefreshToken(String token) {
+        return validateTokenType(token, REFRESH_TOKEN);
+    }
+
+    private boolean validateTokenType(String token, String expectedType) {
+        try {
+            Claims claims = parseClaims(token);
+            return expectedType.equals(claims.get(TOKEN_TYPE_CLAIM, String.class));
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
@@ -63,12 +90,13 @@ public class JwtTokenProvider {
     }
 
     public Long getUserId(String token) {
-        return parseClaims(token).get("userId", Long.class);
+        return parseClaims(token).get(USER_ID_CLAIM, Long.class);
     }
 
     @SuppressWarnings("unchecked")
     public List<String> getRoles(String token) {
-        return parseClaims(token).get("roles", List.class);
+        List<String> roles = parseClaims(token).get(ROLES_CLAIM, List.class);
+        return roles == null ? List.of() : roles;
     }
 
     public Claims parseClaims(String token) {
