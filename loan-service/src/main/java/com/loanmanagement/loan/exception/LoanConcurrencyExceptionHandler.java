@@ -13,6 +13,6 @@ public class LoanConcurrencyExceptionHandler {
     @ExceptionHandler({OptimisticLockingFailureException.class, jakarta.persistence.OptimisticLockException.class})
     public ResponseEntity<ApiResponse<Void>> handleOptimisticLocking(Exception ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("LOAN_CONCURRENT_UPDATE", "Loan was modified by another request. Please reload and retry."));
+                .body(ApiResponse.error("Loan was modified by another request. Please reload and retry."));
     }
 }
