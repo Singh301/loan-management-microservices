@@ -45,8 +45,8 @@ public class LoanApplicationService {
                 .outstandingPrincipal(request.getLoanAmount()).remainingInstallments(request.getTenureMonths()).build();
         loan = loanRepository.save(loan);
         LoanEventPayload payload = LoanEventPayload.builder().loanId(loan.getLoanId()).customerId(loan.getCustomerId())
-                .status(loan.getLoanStatus().name()).loanAmount(loan.getLoanAmount()).tenureMonths(loan.getTenureMonths())
-                .applicationDate(loan.getApplicationDate()).build();
+                .status(loan.getLoanStatus().name()).loanAmount(loan.getLoanAmount()).interestRate(loan.getInterestRate())
+                .tenureMonths(loan.getTenureMonths()).applicationDate(loan.getApplicationDate()).build();
         outboxService.enqueue(DomainEvent.of(LoanEvents.LOAN_APPLIED, loan.getLoanId().toString(), "Loan", payload));
         LoanResponseDto response = toDto(loan);
         idempotencyService.complete(idempotencyKey, response);
@@ -80,7 +80,7 @@ public class LoanApplicationService {
         loan = loanRepository.save(loan);
         outboxService.enqueue(DomainEvent.of(LoanEvents.LOAN_APPROVED, loan.getLoanId().toString(), "Loan", LoanEventPayload.builder()
                 .loanId(loan.getLoanId()).customerId(loan.getCustomerId()).status(LoanStatus.APPROVED.name()).previousStatus(LoanStatus.PENDING.name())
-                .loanAmount(loan.getLoanAmount()).emi(loan.getEmi()).tenureMonths(loan.getTenureMonths()).approvedBy(approvedBy).build()));
+                .loanAmount(loan.getLoanAmount()).interestRate(loan.getInterestRate()).emi(loan.getEmi()).tenureMonths(loan.getTenureMonths()).approvedBy(approvedBy).build()));
         return toDto(loan);
     }
 
@@ -93,9 +93,7 @@ public class LoanApplicationService {
         return toDto(loan);
     }
 
-    private void validateCustomer(Long customerId) {
-        customerValidationService.validate(customerId);
-    }
+    private void validateCustomer(Long customerId) { customerValidationService.validate(customerId); }
 
     private Loan findLoan(Long id) { return loanRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Loan", id)); }
 
