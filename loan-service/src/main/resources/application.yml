@@ -16,6 +16,13 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+  cache:
+    type: redis
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     producer:
@@ -34,6 +41,10 @@ eureka:
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:900000}
+
+outbox:
+  publisher:
+    delay-ms: ${OUTBOX_PUBLISHER_DELAY_MS:2000}
 
 management:
   endpoints:
