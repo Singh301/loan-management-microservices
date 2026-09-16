@@ -1,5 +1,6 @@
 package com.loanmanagement.repayment.scheduler;
 
+import com.loanmanagement.repayment.service.DistributedLockService;
 import com.loanmanagement.repayment.service.EmiScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,11 +12,22 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class OverdueScheduler {
 
-    private final EmiScheduleService emiScheduleService;
+    private static final String LOCK_NAME = "repayment-overdue-scheduler";
 
-    @Scheduled(cron = "0 0 1 * * *") // every day at 1 AM
+    private final EmiScheduleService emiScheduleService;
+    private final DistributedLockService distributedLockService;
+
+    @Scheduled(cron = "${repayment.scheduler.overdue-cron:0 0 1 * * *}")
     public void markOverdueEmis() {
-        log.info("Running overdue EMI scheduler");
-        emiScheduleService.markOverdue();
+        if (!distributedLockService.tryLock(LOCK_NAME)) {
+            log.debug("Another repayment-service instance owns the overdue scheduler lock");
+            return;
+        }
+        try {
+            log.info("Running overdue EMI scheduler");
+            emiScheduleService.markOverdue();
+        } finally {
+            distributedLockService.unlock(LOCK_NAME);
+        }
     }
 }
