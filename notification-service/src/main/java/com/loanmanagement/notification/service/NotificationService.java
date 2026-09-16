@@ -4,7 +4,6 @@ import com.loanmanagement.notification.entity.Notification;
 import com.loanmanagement.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,20 +25,15 @@ public class NotificationService {
             log.info("Ignoring duplicate notification event {}", eventId);
             return null;
         }
-        try {
-            Notification n = Notification.builder()
-                    .eventId(eventId)
-                    .customerId(customerId)
-                    .loanId(loanId)
-                    .title(title)
-                    .message(message)
-                    .type(type)
-                    .build();
-            return repository.saveAndFlush(n);
-        } catch (DataIntegrityViolationException duplicate) {
-            log.info("Concurrent duplicate notification event ignored: {}", eventId);
-            return null;
-        }
+        Notification n = Notification.builder()
+                .eventId(eventId)
+                .customerId(customerId)
+                .loanId(loanId)
+                .title(title)
+                .message(message)
+                .type(type)
+                .build();
+        return repository.saveAndFlush(n);
     }
 
     @Transactional(readOnly = true)
