@@ -10,6 +10,7 @@ import com.loanmanagement.auth.entity.RefreshToken;
 import com.loanmanagement.auth.entity.User;
 import com.loanmanagement.auth.repository.RefreshTokenRepository;
 import com.loanmanagement.auth.repository.UserRepository;
+import com.loanmanagement.auth.security.TokenBlacklistService;
 import com.loanmanagement.common.exception.DomainException;
 import com.loanmanagement.common.exception.ResourceNotFoundException;
 import com.loanmanagement.common.security.JwtProperties;
@@ -24,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import com.loanmanagement.auth.security.TokenBlacklistService;
 
 @Service
 @RequiredArgsConstructor
@@ -33,14 +33,13 @@ public class AuthService {
 
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
-    private final TokenBlacklistService tokenBlacklistService;
 
+    private final TokenBlacklistService tokenBlacklistService;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
-
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -95,7 +94,12 @@ public class AuthService {
 
     @Transactional
     public LoginResponse refreshToken(RefreshTokenRequest request) {
-        RefreshToken stored = refreshTokenRepository.findByToken(request.getRefreshToken())
+        String refreshToken = request.getRefreshToken();
+        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+            throw new DomainException("Invalid refresh token", HttpStatus.UNAUTHORIZED);
+        }
+
+        RefreshToken stored = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new DomainException("Invalid refresh token", HttpStatus.UNAUTHORIZED));
 
         if (stored.isRevoked() || stored.isExpired()) {
@@ -110,6 +114,7 @@ public class AuthService {
         List<String> roles = List.of("ROLE_" + user.getRole().name());
         String newAccessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), user.getId(), roles);
 
+        // Refresh-token rotation: every successful refresh invalidates the previous token.
         stored.setRevoked(true);
         refreshTokenRepository.save(stored);
         String newRefreshToken = createRefreshToken(user);
@@ -128,19 +133,17 @@ public class AuthService {
 
     @Transactional
     public void logout(String accessToken, String refreshToken) {
-        if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
+        if (accessToken != null && jwtTokenProvider.validateAccessToken(accessToken)) {
             tokenBlacklistService.blacklist(accessToken);
         }
 
-        if (refreshToken != null) {
+        if (refreshToken != null && jwtTokenProvider.validateRefreshToken(refreshToken)) {
             refreshTokenRepository.findByToken(refreshToken).ifPresent(rt -> {
                 rt.setRevoked(true);
                 refreshTokenRepository.save(rt);
             });
         }
     }
-
-
 
     @Transactional(readOnly = true)
     public List<UserResponse> listUsers() {
