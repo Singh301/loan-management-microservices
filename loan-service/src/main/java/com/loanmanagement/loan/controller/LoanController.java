@@ -225,8 +225,13 @@ public class LoanController {
     }
 
     private Long extractCustomerId(Authentication auth) {
-        if (auth == null || auth.getPrincipal() == null) throw new IllegalStateException("Unauthenticated");
-        try { return Long.parseLong(auth.getName()); }
-        catch (NumberFormatException e) { throw new IllegalStateException("Unable to resolve customerId from token"); }
+        if (auth == null || auth.getDetails() == null) {
+            throw new IllegalStateException("Unable to resolve customerId from token");
+        }
+        Object details = auth.getDetails();
+        if (details instanceof Number number) {
+            return number.longValue();
+        }
+        throw new IllegalStateException("Unable to resolve customerId from token");
     }
 }
