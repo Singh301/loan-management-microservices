@@ -35,6 +35,10 @@ eureka:
 jwt:
   secret: ${JWT_SECRET}
 
+repayment:
+  scheduler:
+    overdue-cron: ${REPAYMENT_OVERDUE_CRON:0 0 1 * * *}
+
 management:
   endpoints:
     web:
