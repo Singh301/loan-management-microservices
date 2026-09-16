@@ -17,7 +17,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -56,21 +55,24 @@ public class SecurityConfig {
                                         FilterChain chain) throws ServletException, IOException {
             try {
                 String token = extract(request);
-                if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
+                if (StringUtils.hasText(token) && jwtTokenProvider.validateAccessToken(token)) {
                     String username = jwtTokenProvider.getUsername(token);
                     var authorities = jwtTokenProvider.getRoles(token).stream()
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
                     var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                    auth.setDetails(jwtTokenProvider.getUserId(token));
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+                SecurityContextHolder.clearContext();
+            }
             chain.doFilter(request, response);
         }
 
         private String extract(HttpServletRequest req) {
             String h = req.getHeader("Authorization");
-            return (StringUtils.hasText(h) && h.startsWith("Bearer ")) ? h.substring(7) : null;
+            return (StringUtils.hasText(h) && h.startsWith("Bearer ")) ? h.substring(7).trim() : null;
         }
     }
 }
