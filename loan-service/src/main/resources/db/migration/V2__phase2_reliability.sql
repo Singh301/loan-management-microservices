@@ -1,19 +1,19 @@
--- Phase 2: reliability, idempotency and query-performance hardening.
+-- Phase 2: reliability, idempotency and database query-performance hardening.
 
 ALTER TABLE outbox_events
     ADD COLUMN retry_count INT NOT NULL DEFAULT 0,
     ADD COLUMN next_retry_at DATETIME NULL,
     ADD COLUMN last_error VARCHAR(1000) NULL;
 
-CREATE INDEX idx_outbox_status_retry_created
-    ON outbox_events(status, next_retry_at, created_at);
+CREATE INDEX idx_outbox_status_retry_created ON outbox_events(status, next_retry_at, created_at);
 
 CREATE TABLE idempotency_records (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     idempotency_key VARCHAR(100) NOT NULL,
     operation VARCHAR(100) NOT NULL,
     request_hash VARCHAR(64) NOT NULL,
-    response_body LONGTEXT NOT NULL,
+    response_body LONGTEXT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PROCESSING',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at DATETIME NOT NULL,
     CONSTRAINT uk_idempotency_key UNIQUE (idempotency_key),
