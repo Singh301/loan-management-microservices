@@ -29,6 +29,24 @@ public class RepaymentService {
     public Repayment recordPayment(RepaymentRequestDto request) {
         LocalDate payDate = request.getPaymentDate() != null ? request.getPaymentDate() : LocalDate.now();
 
+        if (request.getTransactionRef() != null && !request.getTransactionRef().isBlank()
+                && repaymentRepository.existsByTransactionRef(request.getTransactionRef())) {
+            throw new DomainException("Payment transaction already processed", HttpStatus.CONFLICT, "PAYMENT_ALREADY_PROCESSED");
+        }
+
+        EmiSchedule schedule = null;
+        if (request.getEmiScheduleId() != null) {
+            schedule = emiScheduleRepository.findByIdForUpdate(request.getEmiScheduleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("EmiSchedule", request.getEmiScheduleId()));
+
+            if (!schedule.getLoanId().equals(request.getLoanId())) {
+                throw new DomainException("EMI schedule does not belong to the supplied loan", HttpStatus.BAD_REQUEST);
+            }
+            if (schedule.getStatus() == EmiSchedule.Status.PAID) {
+                throw new DomainException("EMI already paid", HttpStatus.CONFLICT);
+            }
+        }
+
         Repayment repayment = Repayment.builder()
                 .loanId(request.getLoanId())
                 .emiScheduleId(request.getEmiScheduleId())
@@ -41,24 +59,13 @@ public class RepaymentService {
 
         repayment = repaymentRepository.save(repayment);
 
-        // Update EMI schedule if linked
-        if (request.getEmiScheduleId() != null) {
-            EmiSchedule schedule = emiScheduleRepository.findById(request.getEmiScheduleId())
-                    .orElseThrow(() -> new ResourceNotFoundException("EmiSchedule", request.getEmiScheduleId()));
-
-            if (schedule.getStatus() == EmiSchedule.Status.PAID) {
-                throw new DomainException("EMI already paid", HttpStatus.CONFLICT);
-            }
-
+        if (schedule != null) {
             BigDecimal totalDue = schedule.getEmiAmount().add(schedule.getLateFee());
             schedule.setPaidAmount(request.getAmount());
             schedule.setPaidDate(payDate);
-
-            if (request.getAmount().compareTo(totalDue) >= 0) {
-                schedule.setStatus(EmiSchedule.Status.PAID);
-            } else {
-                schedule.setStatus(EmiSchedule.Status.PARTIALLY_PAID);
-            }
+            schedule.setStatus(request.getAmount().compareTo(totalDue) >= 0
+                    ? EmiSchedule.Status.PAID
+                    : EmiSchedule.Status.PARTIALLY_PAID);
             emiScheduleRepository.save(schedule);
         }
 
