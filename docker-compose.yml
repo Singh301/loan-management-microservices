@@ -5,7 +5,7 @@ services:
     image: mysql:8.0
     container_name: lms-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
       MYSQL_DATABASE: loan_mgmt
     ports:
       - "3307:3306"
@@ -13,7 +13,7 @@ services:
       - mysql_data:/var/lib/mysql
       - ./docker/init-databases.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 10s
       timeout: 5s
       retries: 15
@@ -81,10 +81,12 @@ services:
     environment:
       EUREKA_URL: http://discovery-server:8761/eureka/
       REDIS_HOST: redis
-      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
-      - discovery-server
-      - redis
+      discovery-server:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - lms-net
 
@@ -99,15 +101,15 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: root
-      DB_PASSWORD: root
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       REDIS_HOST: redis
-      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
       mysql:
         condition: service_healthy
       discovery-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - lms-net
 
@@ -122,14 +124,14 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: root
-      DB_PASSWORD: root
-      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
       mysql:
         condition: service_healthy
       discovery-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - lms-net
 
@@ -144,15 +146,15 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: root
-      DB_PASSWORD: root
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       KAFKA_BOOTSTRAP: kafka:29092
-      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
       mysql:
         condition: service_healthy
       discovery-server:
-        condition: service_started
+        condition: service_healthy
       kafka:
         condition: service_started
     networks:
@@ -169,14 +171,16 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: root
-      DB_PASSWORD: root
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       KAFKA_BOOTSTRAP: kafka:29092
-      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
       mysql:
         condition: service_healthy
       discovery-server:
+        condition: service_healthy
+      kafka:
         condition: service_started
     networks:
       - lms-net
@@ -192,14 +196,14 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: root
-      DB_PASSWORD: root
-      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
       mysql:
         condition: service_healthy
       discovery-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - lms-net
 
@@ -214,14 +218,16 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: root
-      DB_PASSWORD: root
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       KAFKA_BOOTSTRAP: kafka:29092
-      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
       mysql:
         condition: service_healthy
       discovery-server:
+        condition: service_healthy
+      kafka:
         condition: service_started
     networks:
       - lms-net
@@ -237,14 +243,16 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: root
-      DB_PASSWORD: root
+      DB_USERNAME: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       KAFKA_BOOTSTRAP: kafka:29092
-      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
       mysql:
         condition: service_healthy
       discovery-server:
+        condition: service_healthy
+      kafka:
         condition: service_started
     networks:
       - lms-net
@@ -258,33 +266,34 @@ services:
       - "8088:8088"
     environment:
       EUREKA_URL: http://discovery-server:8761/eureka/
-      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
-      - discovery-server
+      discovery-server:
+        condition: service_healthy
     networks:
       - lms-net
 
   kafka-ui:
-      image: provectuslabs/kafka-ui:latest
-      container_name: lms-kafka-ui
-      ports:
-        - "8090:8080"
-      environment:
-        KAFKA_CLUSTERS_0_NAME: local
-        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-        DYNAMIC_CONFIG_ENABLED: "true"
-      depends_on:
-        - kafka
-      networks:
-        - lms-net
+    image: provectuslabs/kafka-ui:latest
+    container_name: lms-kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      - kafka
+    networks:
+      - lms-net
 
   zipkin:
-        image: openzipkin/zipkin:latest
-        container_name: lms-zipkin
-        ports:
-          - "9411:9411"
-        networks:
-          - lms-net
+    image: openzipkin/zipkin:latest
+    container_name: lms-zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - lms-net
 
 volumes:
   mysql_data:
