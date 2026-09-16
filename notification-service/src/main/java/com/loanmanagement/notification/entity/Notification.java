@@ -6,7 +6,11 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "notifications", indexes = {
+        @Index(name = "idx_notifications_customer_created", columnList = "customer_id,created_at")
+}, uniqueConstraints = {
+        @UniqueConstraint(name = "uk_notifications_event_id", columnNames = "event_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,6 +21,9 @@ public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "event_id", nullable = false, length = 64)
+    private String eventId;
 
     @Column(name = "user_id")
     private Long userId;
