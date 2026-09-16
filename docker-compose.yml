@@ -1,0 +1,294 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lms-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: loan_mgmt
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/init-databases.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    networks:
+      - lms-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: lms-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - lms-net
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: lms-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - lms-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: lms-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - lms-net
+
+  discovery-server:
+    build:
+      context: .
+      dockerfile: discovery-server/Dockerfile
+    container_name: lms-discovery
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8761/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks:
+      - lms-net
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: lms-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      REDIS_HOST: redis
+      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+    depends_on:
+      - discovery-server
+      - redis
+    networks:
+      - lms-net
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: lms-auth
+    ports:
+      - "8081:8081"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      REDIS_HOST: redis
+      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - lms-net
+
+  customer-service:
+    build:
+      context: .
+      dockerfile: customer-service/Dockerfile
+    container_name: lms-customer
+    ports:
+      - "8082:8082"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - lms-net
+
+  loan-service:
+    build:
+      context: .
+      dockerfile: loan-service/Dockerfile
+    container_name: lms-loan
+    ports:
+      - "8083:8083"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      KAFKA_BOOTSTRAP: kafka:29092
+      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+      kafka:
+        condition: service_started
+    networks:
+      - lms-net
+
+  repayment-service:
+    build:
+      context: .
+      dockerfile: repayment-service/Dockerfile
+    container_name: lms-repayment
+    ports:
+      - "8084:8084"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      KAFKA_BOOTSTRAP: kafka:29092
+      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - lms-net
+
+  document-service:
+    build:
+      context: .
+      dockerfile: document-service/Dockerfile
+    container_name: lms-document
+    ports:
+      - "8085:8085"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - lms-net
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    container_name: lms-notification
+    ports:
+      - "8086:8086"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      KAFKA_BOOTSTRAP: kafka:29092
+      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - lms-net
+
+  audit-service:
+    build:
+      context: .
+      dockerfile: audit-service/Dockerfile
+    container_name: lms-audit
+    ports:
+      - "8087:8087"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      KAFKA_BOOTSTRAP: kafka:29092
+      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+    networks:
+      - lms-net
+
+  dashboard-service:
+    build:
+      context: .
+      dockerfile: dashboard-service/Dockerfile
+    container_name: lms-dashboard
+    ports:
+      - "8088:8088"
+    environment:
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      JWT_SECRET: ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!
+    depends_on:
+      - discovery-server
+    networks:
+      - lms-net
+
+  kafka-ui:
+      image: provectuslabs/kafka-ui:latest
+      container_name: lms-kafka-ui
+      ports:
+        - "8090:8080"
+      environment:
+        KAFKA_CLUSTERS_0_NAME: local
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+        DYNAMIC_CONFIG_ENABLED: "true"
+      depends_on:
+        - kafka
+      networks:
+        - lms-net
+
+  zipkin:
+        image: openzipkin/zipkin:latest
+        container_name: lms-zipkin
+        ports:
+          - "9411:9411"
+        networks:
+          - lms-net
+
+volumes:
+  mysql_data:
+
+networks:
+  lms-net:
+    driver: bridge

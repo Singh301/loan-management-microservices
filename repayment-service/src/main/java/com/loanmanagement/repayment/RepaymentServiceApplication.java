@@ -1,0 +1,18 @@
+package com.loanmanagement.repayment;
+
+import com.loanmanagement.common.security.JwtProperties;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+@SpringBootApplication(scanBasePackages = {"com.loanmanagement.repayment", "com.loanmanagement.common"})
+@EnableDiscoveryClient
+@EnableScheduling
+@EnableConfigurationProperties(JwtProperties.class)
+public class RepaymentServiceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(RepaymentServiceApplication.class, args);
+    }
+}

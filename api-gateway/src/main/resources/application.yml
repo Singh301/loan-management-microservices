@@ -1,0 +1,104 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          default-filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 50
+                redis-rate-limiter.burstCapacity: 100
+                key-resolver: "#{@userOrIpKeyResolver}"
+            - AddRequestHeader=X-Gateway,loan-api-gateway
+          routes:
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/v1/auth/**,/api/v1/users/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 20
+                    redis-rate-limiter.burstCapacity: 40
+                    key-resolver: "#{@userOrIpKeyResolver}"
+            - id: customer-service
+              uri: lb://customer-service
+              predicates:
+                - Path=/api/v1/customers/**
+            - id: loan-service
+              uri: lb://loan-service
+              predicates:
+                - Path=/api/v1/loans/**,/api/v1/loan-products/**,/api/v1/collaterals/**
+            - id: repayment-service
+              uri: lb://repayment-service
+              predicates:
+                - Path=/api/v1/repayments/**,/api/v1/emi-schedules/**
+            - id: document-service
+              uri: lb://document-service
+              predicates:
+                - Path=/api/v1/documents/**
+            - id: notification-service
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/v1/notifications/**
+            - id: audit-service
+              uri: lb://audit-service
+              predicates:
+                - Path=/api/v1/audits/**
+            - id: dashboard-service
+              uri: lb://dashboard-service
+              predicates:
+                - Path=/api/v1/dashboard/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,gateway
+  endpoint:
+    gateway:
+      access: read-only
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    reactor.netty: INFO
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: auth-service
+        url: /api/v1/auth/v3/api-docs
+      - name: loan-service
+        url: /api/v1/loans/v3/api-docs
