@@ -4,7 +4,7 @@ metadata:
   name: discovery-server
   namespace: loan-management
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: discovery-server }
   template:
