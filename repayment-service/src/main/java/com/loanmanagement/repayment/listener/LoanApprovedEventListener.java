@@ -31,8 +31,8 @@ public class LoanApprovedEventListener {
         if (!(event.getPayload() instanceof LoanEventPayload payload)) {
             throw new IllegalArgumentException("Invalid loan event payload");
         }
-        if (payload.getLoanId() == null || payload.getLoanAmount() == null || payload.getEmi() == null
-                || payload.getTenureMonths() == null) {
+        if (payload.getLoanId() == null || payload.getLoanAmount() == null || payload.getInterestRate() == null
+                || payload.getEmi() == null || payload.getTenureMonths() == null) {
             throw new IllegalArgumentException("Loan approval event is missing repayment schedule data");
         }
 
@@ -40,25 +40,10 @@ public class LoanApprovedEventListener {
         emiScheduleService.generateSchedule(
                 payload.getLoanId(),
                 payload.getLoanAmount(),
-                nullSafeRate(payload),
+                payload.getInterestRate(),
                 payload.getTenureMonths(),
                 payload.getEmi(),
                 payload.getApplicationDate());
-    }
-
-    private java.math.BigDecimal nullSafeRate(LoanEventPayload payload) {
-        // The current domain event does not carry the interest rate. Schedule generation
-        // can still derive installment principal/interest from the approved EMI once the
-        // interest rate is added to the shared event contract.
-        if (payload.getLoanAmount().signum() == 0) {
-            return java.math.BigDecimal.ZERO;
-        }
-        return payload.getEmi()
-                .multiply(java.math.BigDecimal.valueOf(payload.getTenureMonths()))
-                .subtract(payload.getLoanAmount())
-                .divide(payload.getLoanAmount(), 10, java.math.RoundingMode.HALF_UP)
-                .multiply(java.math.BigDecimal.valueOf(1200))
-                .divide(java.math.BigDecimal.valueOf(payload.getTenureMonths()), 10, java.math.RoundingMode.HALF_UP);
     }
 
     @DltHandler
