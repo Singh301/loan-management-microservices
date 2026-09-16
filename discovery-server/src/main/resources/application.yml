@@ -20,4 +20,6 @@ management:
         include: health,info
   endpoint:
     health:
-      show-details: always
+      show-details: never
+      probes:
+        enabled: true
