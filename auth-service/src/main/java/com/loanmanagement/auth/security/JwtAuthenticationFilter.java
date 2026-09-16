@@ -1,6 +1,5 @@
 package com.loanmanagement.auth.security;
 
-
 import com.loanmanagement.common.security.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,7 +16,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -26,38 +24,57 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenBlacklistService tokenBlacklistService;
 
-
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        try {
-            String token = extractToken(request);
-            if (StringUtils.hasText(token)
-                    && jwtTokenProvider.validateToken(token)
-                    && !tokenBlacklistService.isBlacklisted(token)) {
 
-                String username = jwtTokenProvider.getUsername(token);
-                List<String> roles = jwtTokenProvider.getRoles(token);
+        String token = extractToken(request);
 
-                var authorities = roles.stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
-
-                var authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        } catch (Exception e) {
-            // ignore - continue without authentication
+        // No Authorization header: let Spring Security decide whether the endpoint is public.
+        if (!StringUtils.hasText(token)) {
+            filterChain.doFilter(request, response);
+            return;
         }
-        filterChain.doFilter(request, response);
+
+        if (!jwtTokenProvider.validateAccessToken(token)
+                || tokenBlacklistService.isBlacklisted(token)) {
+            SecurityContextHolder.clearContext();
+            writeUnauthorized(response, "Invalid or expired access token");
+            return;
+        }
+
+        try {
+            String username = jwtTokenProvider.getUsername(token);
+            List<SimpleGrantedAuthority> authorities = jwtTokenProvider.getRoles(token).stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
+
+            var authentication = new UsernamePasswordAuthenticationToken(
+                    username, null, authorities);
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            filterChain.doFilter(request, response);
+        } catch (RuntimeException ex) {
+            SecurityContextHolder.clearContext();
+            writeUnauthorized(response, "Invalid access token");
+        }
     }
 
     private String extractToken(HttpServletRequest request) {
-        String bearer = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
-            return bearer.substring(7);
+        String authorization = request.getHeader("Authorization");
+        if (StringUtils.hasText(authorization) && authorization.startsWith("Bearer ")) {
+            String token = authorization.substring(7).trim();
+            return StringUtils.hasText(token) ? token : null;
         }
         return null;
+    }
+
+    private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"status\":401,\"error\":\"UNAUTHORIZED\",\"message\":\""
+                + message + "\"}");
     }
 }
