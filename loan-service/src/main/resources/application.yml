@@ -54,6 +54,9 @@ resilience4j:
         wait-duration-in-open-state: 10s
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
+        ignore-exceptions:
+          - com.loanmanagement.common.exception.ResourceNotFoundException
+          - com.loanmanagement.common.exception.DomainException
   retry:
     instances:
       customerService:
