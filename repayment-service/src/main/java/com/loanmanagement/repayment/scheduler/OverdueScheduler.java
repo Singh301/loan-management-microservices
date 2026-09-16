@@ -19,15 +19,10 @@ public class OverdueScheduler {
 
     @Scheduled(cron = "${repayment.scheduler.overdue-cron:0 0 1 * * *}")
     public void markOverdueEmis() {
-        if (!distributedLockService.tryLock(LOCK_NAME)) {
-            log.debug("Another repayment-service instance owns the overdue scheduler lock");
-            return;
-        }
-        try {
+        distributedLockService.executeWithLock(LOCK_NAME, () -> {
             log.info("Running overdue EMI scheduler");
             emiScheduleService.markOverdue();
-        } finally {
-            distributedLockService.unlock(LOCK_NAME);
-        }
+            return null;
+        });
     }
 }
