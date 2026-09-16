@@ -19,6 +19,7 @@ public class LoanEventPayload {
     private String status;
     private String previousStatus;
     private BigDecimal loanAmount;
+    private BigDecimal interestRate;
     private BigDecimal emi;
     private Integer tenureMonths;
     private LocalDate applicationDate;
