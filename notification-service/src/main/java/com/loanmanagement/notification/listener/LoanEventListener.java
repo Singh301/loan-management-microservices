@@ -18,8 +18,14 @@ public class LoanEventListener {
 
     @KafkaListener(topics = "loan.events", groupId = "notification-service")
     public void onLoanEvent(DomainEvent event) {
-        log.info("Received event: {}", event.getEventType());
+        if (event == null || event.getEventId() == null) {
+            throw new IllegalArgumentException("Kafka loan event must contain eventId");
+        }
+        log.info("Received loan event eventId={}, type={}, aggregateId={}",
+                event.getEventId(), event.getEventType(), event.getAggregateId());
+
         if (!(event.getPayload() instanceof LoanEventPayload payload)) {
+            log.warn("Ignoring unsupported loan event payload. eventId={}", event.getEventId());
             return;
         }
 
@@ -47,6 +53,7 @@ public class LoanEventListener {
             }
         }
 
-        notificationService.create(payload.getCustomerId(), payload.getLoanId(), title, message, event.getEventType());
+        notificationService.create(event.getEventId(), payload.getCustomerId(), payload.getLoanId(),
+                title, message, event.getEventType());
     }
 }
