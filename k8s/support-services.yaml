@@ -1,0 +1,194 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: loan-management
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: auth-service }
+  template:
+    metadata:
+      labels: { app: auth-service }
+    spec:
+      containers:
+        - name: auth-service
+          image: ghcr.io/singh301/auth-service:latest
+          ports: [{ containerPort: 8081 }]
+          envFrom:
+            - configMapRef: { name: loan-management-config }
+            - secretRef: { name: loan-management-secrets }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8081 }
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8081 }
+            initialDelaySeconds: 40
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 768Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service
+  namespace: loan-management
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: customer-service }
+  template:
+    metadata:
+      labels: { app: customer-service }
+    spec:
+      containers:
+        - name: customer-service
+          image: ghcr.io/singh301/customer-service:latest
+          ports: [{ containerPort: 8082 }]
+          envFrom:
+            - configMapRef: { name: loan-management-config }
+            - secretRef: { name: loan-management-secrets }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8082 }
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8082 }
+            initialDelaySeconds: 40
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 768Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: document-service
+  namespace: loan-management
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: document-service }
+  template:
+    metadata:
+      labels: { app: document-service }
+    spec:
+      containers:
+        - name: document-service
+          image: ghcr.io/singh301/document-service:latest
+          ports: [{ containerPort: 8085 }]
+          env:
+            - name: UPLOAD_DIR
+              value: /app/uploads
+          envFrom:
+            - configMapRef: { name: loan-management-config }
+            - secretRef: { name: loan-management-secrets }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8085 }
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8085 }
+            initialDelaySeconds: 40
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 768Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: loan-management
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: notification-service }
+  template:
+    metadata:
+      labels: { app: notification-service }
+    spec:
+      containers:
+        - name: notification-service
+          image: ghcr.io/singh301/notification-service:latest
+          ports: [{ containerPort: 8086 }]
+          envFrom:
+            - configMapRef: { name: loan-management-config }
+            - secretRef: { name: loan-management-secrets }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8086 }
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8086 }
+            initialDelaySeconds: 40
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 768Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-service
+  namespace: loan-management
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: audit-service }
+  template:
+    metadata:
+      labels: { app: audit-service }
+    spec:
+      containers:
+        - name: audit-service
+          image: ghcr.io/singh301/audit-service:latest
+          ports: [{ containerPort: 8087 }]
+          envFrom:
+            - configMapRef: { name: loan-management-config }
+            - secretRef: { name: loan-management-secrets }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8087 }
+            initialDelaySeconds: 25
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8087 }
+            initialDelaySeconds: 40
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 768Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard-service
+  namespace: loan-management
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: dashboard-service }
+  template:
+    metadata:
+      labels: { app: dashboard-service }
+    spec:
+      containers:
+        - name: dashboard-service
+          image: ghcr.io/singh301/dashboard-service:latest
+          ports: [{ containerPort: 8088 }]
+          envFrom:
+            - configMapRef: { name: loan-management-config }
+            - secretRef: { name: loan-management-secrets }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8088 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8088 }
+            initialDelaySeconds: 35
+            periodSeconds: 15
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 768Mi }
