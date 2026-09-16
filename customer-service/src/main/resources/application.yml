@@ -24,13 +24,16 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!}
+  secret: ${JWT_SECRET}
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: never
 
 springdoc:
   api-docs:
