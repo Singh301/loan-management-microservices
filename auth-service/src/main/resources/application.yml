@@ -32,7 +32,7 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!}
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:900000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
@@ -43,7 +43,7 @@ management:
         include: health,info,prometheus,metrics
   endpoint:
     health:
-      show-details: always
+      show-details: never
 
 springdoc:
   api-docs:
