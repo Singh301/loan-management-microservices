@@ -71,7 +71,7 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyForJwtTokenGenerationMinimum256BitsLong!!}
+  secret: ${JWT_SECRET}
 
 management:
   endpoints:
@@ -82,7 +82,7 @@ management:
     gateway:
       access: read-only
     health:
-      show-details: always
+      show-details: never
   metrics:
     tags:
       application: ${spring.application.name}
