@@ -6,6 +6,7 @@ import com.loanmanagement.loan.dto.LoanResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,8 +41,8 @@ public class IdempotencyService {
     @Transactional
     public void claim(String key, String requestHash) {
         try {
-            repository.saveAndFlush(IdempotencyRecord.builder().idempotencyKey(key).operation(APPLY_OPERATION)
-                    .requestHash(requestHash).status(IdempotencyRecord.Status.PROCESSING).expiresAt(LocalDateTime.now().plusHours(24)).build());
+            repository.saveAndFlush(IdempotencyRecord.builder().idempotencyKey(key).operation(APPLY_OPERATION).requestHash(requestHash)
+                    .status(IdempotencyRecord.Status.PROCESSING).expiresAt(LocalDateTime.now().plusHours(24)).build());
         } catch (DataIntegrityViolationException e) {
             throw new DomainException("Request with this Idempotency-Key is already in progress or completed", HttpStatus.CONFLICT);
         }
@@ -50,12 +51,16 @@ public class IdempotencyService {
     @Transactional
     public void complete(String key, LoanResponseDto response) {
         repository.findByIdempotencyKeyAndOperation(key, APPLY_OPERATION).ifPresent(record -> {
-            try {
-                record.setResponseBody(objectMapper.writeValueAsString(response));
-                record.setStatus(IdempotencyRecord.Status.COMPLETED);
-                repository.save(record);
-            } catch (Exception e) { throw new DomainException("Unable to persist idempotent response", HttpStatus.INTERNAL_SERVER_ERROR); }
+            try { record.setResponseBody(objectMapper.writeValueAsString(response)); record.setStatus(IdempotencyRecord.Status.COMPLETED); repository.save(record); }
+            catch (Exception e) { throw new DomainException("Unable to persist idempotent response", HttpStatus.INTERNAL_SERVER_ERROR); }
         });
+    }
+
+    @Scheduled(cron = "0 45 2 * * *")
+    @Transactional
+    public void cleanupExpiredRecords() {
+        long deleted = repository.deleteByExpiresAtBefore(LocalDateTime.now());
+        if (deleted > 0) org.slf4j.LoggerFactory.getLogger(IdempotencyService.class).info("Deleted {} expired idempotency records", deleted);
     }
 
     public String requestHash(Object request) {
