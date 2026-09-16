@@ -10,7 +10,7 @@ services:
     ports: ["3307:3306"]
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./docker/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+      - ./docker/init-databases.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 10s
@@ -183,7 +183,7 @@ services:
     networks: [lms-net]
 
   audit-service:
-    build: { context: ., dockerfile: audit/Dockerfile }
+    build: { context: ., dockerfile: audit-service/Dockerfile }
     container_name: lms-audit
     ports: ["8087:8087"]
     environment:
