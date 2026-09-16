@@ -1,6 +1,9 @@
-﻿target/
+target/
 .idea/
 *.iml
 *.class
 *.jar
 .DS_Store
+.env
+.env.*
+!.env.example
