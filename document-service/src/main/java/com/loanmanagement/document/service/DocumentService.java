@@ -4,26 +4,20 @@ import com.loanmanagement.common.exception.DomainException;
 import com.loanmanagement.common.exception.ResourceNotFoundException;
 import com.loanmanagement.document.entity.Document;
 import com.loanmanagement.document.repository.DocumentRepository;
+import com.loanmanagement.document.storage.DocumentStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,43 +30,39 @@ public class DocumentService {
     private static final long MAX_SIZE = 5 * 1024 * 1024;
 
     private final DocumentRepository documentRepository;
-
-    @Value("${file.upload-dir:./uploads}")
-    private String uploadDir;
+    private final DocumentStorage documentStorage;
 
     @Transactional
     public Document upload(MultipartFile file, Long loanId, Long customerId,
                            String documentType, String uploadedBy) {
         validate(file);
+
+        String original = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+        String safeOriginal = Paths.get(original.replace("\\", "/")).getFileName().toString();
+
+        String storageKey = null;
         try {
-            Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
-            Files.createDirectories(dir);
-
-            String original = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
-            String safeOriginal = Paths.get(original).getFileName().toString();
-            String stored = UUID.randomUUID() + "_" + safeOriginal;
-            Path target = dir.resolve(stored).normalize();
-            if (!target.getParent().equals(dir)) {
-                throw new DomainException("Invalid storage path", HttpStatus.BAD_REQUEST);
-            }
-
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            storageKey = documentStorage.store(file, safeOriginal);
 
             Document doc = Document.builder()
                     .loanId(loanId)
                     .customerId(customerId)
                     .documentType(documentType)
                     .originalName(safeOriginal)
-                    .storedName(stored)
+                    .storedName(storageKey)
                     .contentType(file.getContentType())
                     .sizeBytes(file.getSize())
-                    .storagePath(target.toString())
+                    .storagePath(storageKey)
                     .uploadedBy(uploadedBy)
                     .build();
 
             return documentRepository.save(doc);
-        } catch (IOException e) {
+        } catch (IOException ex) {
+            cleanupQuietly(storageKey);
             throw new DomainException("Failed to store file", HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (RuntimeException ex) {
+            cleanupQuietly(storageKey);
+            throw ex;
         }
     }
 
@@ -80,18 +70,9 @@ public class DocumentService {
     public Resource download(Long id) {
         Document doc = getMeta(id);
         try {
-            Path base = Paths.get(uploadDir).toAbsolutePath().normalize();
-            Path path = Paths.get(doc.getStoragePath()).toAbsolutePath().normalize();
-            if (!path.startsWith(base)) {
-                throw new DomainException("Invalid file path", HttpStatus.FORBIDDEN);
-            }
-            Resource resource = new UrlResource(path.toUri());
-            if (!resource.exists() || !resource.isReadable()) {
-                throw new DomainException("File not readable", HttpStatus.NOT_FOUND);
-            }
-            return resource;
-        } catch (MalformedURLException e) {
-            throw new DomainException("Invalid file path", HttpStatus.INTERNAL_SERVER_ERROR);
+            return documentStorage.load(doc.getStoragePath());
+        } catch (IOException ex) {
+            throw new DomainException("File not readable", HttpStatus.NOT_FOUND);
         }
     }
 
@@ -109,7 +90,8 @@ public class DocumentService {
     @Transactional
     public Document verify(Long id, Document.VerificationStatus status, String remarks, String verifiedBy) {
         if (status == Document.VerificationStatus.PENDING) {
-            throw new DomainException("Verification status must be VERIFIED or REJECTED", HttpStatus.BAD_REQUEST);
+            throw new DomainException(
+                    "Verification status must be VERIFIED or REJECTED", HttpStatus.BAD_REQUEST);
         }
         Document document = getMeta(id);
         document.setVerificationStatus(status);
@@ -119,6 +101,17 @@ public class DocumentService {
         return documentRepository.save(document);
     }
 
+    private void cleanupQuietly(String storageKey) {
+        if (storageKey == null) {
+            return;
+        }
+        try {
+            documentStorage.delete(storageKey);
+        } catch (IOException cleanupError) {
+            log.error("Document storage cleanup failed for key={}", storageKey, cleanupError);
+        }
+    }
+
     private void validate(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new DomainException("File is empty", HttpStatus.BAD_REQUEST);
@@ -126,8 +119,8 @@ public class DocumentService {
         if (file.getSize() > MAX_SIZE) {
             throw new DomainException("File exceeds 5MB limit", HttpStatus.BAD_REQUEST);
         }
-        String ct = file.getContentType();
-        if (ct == null || !ALLOWED_TYPES.contains(ct)) {
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_TYPES.contains(contentType)) {
             throw new DomainException("Only PDF, JPEG, PNG, WEBP allowed", HttpStatus.BAD_REQUEST);
         }
     }
