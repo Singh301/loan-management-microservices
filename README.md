@@ -131,7 +131,7 @@ kubectl apply -f k8s/loan-services.yaml
 kubectl apply -f k8s/support-services.yaml
 ```
 
-For a disposable local Kubernetes environment, `k8s/dev-infrastructure.yaml` supplies MySQL, Redis, ZooKeeper and Kafka using non-persistent storage:
+For a development Kubernetes environment, `k8s/dev-infrastructure.yaml` supplies MySQL, Redis, ZooKeeper and Kafka. MySQL uses a local-path PVC to preserve data across pod recreation:
 
 ```bash
 kubectl apply -f k8s/dev-infrastructure.yaml
@@ -161,7 +161,7 @@ Required Jenkins setup:
 
 ## GitHub Actions
 
-`.github/workflows/ci.yml` runs `mvn clean verify` for pushes and pull requests targeting `master`.
+`.github/workflows/ci.yml` runs `mvn clean verify -Pquality -DskipTests=false` for pushes and pull requests targeting `master`. The workflow also cancels stale concurrent runs and grants read-only repository permissions.
 
 ## Core business flow
 
@@ -186,7 +186,12 @@ Required Jenkins setup:
 - Event consumer idempotency
 - Optimistic/pessimistic locking where appropriate
 - Resilience4j retry/circuit-breaker/timeout patterns
-- Correlation ID propagation
+- Correlation ID propagation with bounded request IDs and MDC cleanup
+- Standardized API error responses with correlation IDs; unexpected server errors are logged internally without exposing stack traces
+- Refresh-token hashing at rest and scheduled cleanup
+- JWT secret strength validation (minimum 32-byte secret)
+- Testcontainers-based database migration regression coverage
+- Concurrency-safe disbursement idempotency ledger
 - Redis caching
 - Actuator health probes
 - Prometheus metrics
