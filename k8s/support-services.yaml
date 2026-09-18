@@ -113,7 +113,6 @@ spec:
           env:
             - name: UPLOAD_DIR
               value: /app/uploads
-          env:
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
