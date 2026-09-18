@@ -40,6 +40,35 @@ pipeline {
             }
         }
 
+        stage('Container Security Scan') {
+            steps {
+                sh '''
+                  set -e
+                  mkdir -p trivy-reports .trivy-cache
+
+                  for service in discovery-server api-gateway auth-service customer-service loan-service repayment-service document-service notification-service audit-service dashboard-service; do
+                    image="${REGISTRY}/${service}:${IMAGE_TAG}"
+                    report="trivy-reports/${service}.json"
+
+                    docker run --rm \
+                      -v /var/run/docker.sock:/var/run/docker.sock \
+                      -v "$WORKSPACE/.trivy-cache:/root/.cache/trivy" \
+                      -v "$WORKSPACE:/work" \
+                      aquasec/trivy:0.70.0 image \
+                      --scanners vuln \
+                      --ignore-unfixed \
+                      --severity HIGH,CRITICAL \
+                      --exit-code 1 \
+                      --format json \
+                      --output "/work/${report}" \
+                      "$image"
+
+                    echo "Container security scan passed for ${image}"
+                  done
+                '''
+            }
+        }
+
         stage('Push Images') {
             when { branch 'master' }
             steps {
@@ -199,6 +228,7 @@ pipeline {
             archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
             archiveArtifacts artifacts: '**/target/dependency-check-report.html', allowEmptyArchive: true
             archiveArtifacts artifacts: '**/target/dependency-check-report.json', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'trivy-reports/*.json', allowEmptyArchive: true
         }
         failure {
             echo 'Pipeline failed. Check the stage logs and Kubernetes rollout status.'
