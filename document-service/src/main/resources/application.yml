@@ -44,8 +44,18 @@ eureka:
 jwt:
   secret: ${JWT_SECRET}
 
-file:
-  upload-dir: ${UPLOAD_DIR:./uploads}
+document:
+  storage:
+    type: ${DOCUMENT_STORAGE_TYPE:local}
+    local:
+      upload-dir: ${UPLOAD_DIR:./uploads}
+    s3:
+      bucket: ${DOCUMENT_S3_BUCKET:}
+      region: ${DOCUMENT_S3_REGION:ap-south-1}
+      key-prefix: ${DOCUMENT_S3_KEY_PREFIX:documents/}
+      endpoint: ${DOCUMENT_S3_ENDPOINT:}
+      path-style-access: ${DOCUMENT_S3_PATH_STYLE_ACCESS:false}
+
 
 management:
   tracing:
