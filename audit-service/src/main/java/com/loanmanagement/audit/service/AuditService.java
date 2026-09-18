@@ -19,14 +19,28 @@ public class AuditService {
 
     @Transactional
     public void record(DomainEvent event) {
+        if (event == null || event.getEventId() == null || event.getEventId().isBlank()) {
+            throw new IllegalArgumentException("Audit eventId is required");
+        }
+
+        if (repository.existsByEventId(event.getEventId())) {
+            return;
+        }
+
         try {
             AuditLog log = AuditLog.builder()
+                    .eventId(event.getEventId())
                     .eventType(event.getEventType())
                     .aggregateId(event.getAggregateId())
                     .aggregateType(event.getAggregateType())
                     .payload(objectMapper.writeValueAsString(event.getPayload()))
                     .build();
-            repository.save(log);
+            repository.saveAndFlush(log);
+        } catch (org.springframework.dao.DataIntegrityViolationException duplicate) {
+            // Another consumer instance may have inserted the same event concurrently.
+            if (!repository.existsByEventId(event.getEventId())) {
+                throw new RuntimeException("Failed to write audit log", duplicate);
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to write audit log", e);
         }
