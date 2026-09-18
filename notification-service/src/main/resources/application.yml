@@ -47,8 +47,11 @@ spring:
       enable-auto-commit: false
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "com.loanmanagement.common.event"
+        isolation.level: read_committed
+        max.poll.records: 25
+        max.poll.interval.ms: 300000
+        session.timeout.ms: 15000
+        heartbeat.interval.ms: 5000
         spring.json.value.default.type: "com.loanmanagement.common.event.DomainEvent"
 
 eureka:
