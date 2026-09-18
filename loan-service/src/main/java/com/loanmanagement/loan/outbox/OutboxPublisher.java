@@ -38,13 +38,22 @@ public class OutboxPublisher {
     public void publishPendingEvents() {
         LocalDateTime now = LocalDateTime.now();
         List<OutboxEvent> events = repository.findReady(
-                now, MAX_RETRIES, now.minusMinutes(PROCESSING_LEASE_MINUTES), PageRequest.of(0, BATCH_SIZE));
+                now,
+                MAX_RETRIES,
+                now.minusMinutes(PROCESSING_LEASE_MINUTES),
+                OutboxEvent.Status.PENDING,
+                OutboxEvent.Status.FAILED,
+                OutboxEvent.Status.PROCESSING,
+                PageRequest.of(0, BATCH_SIZE));
         for (OutboxEvent event : events) {
             int claimed = repository.claimForProcessing(
                     event.getId(),
                     now,
                     MAX_RETRIES,
-                    now.minusMinutes(PROCESSING_LEASE_MINUTES));
+                    now.minusMinutes(PROCESSING_LEASE_MINUTES),
+                    OutboxEvent.Status.PENDING,
+                    OutboxEvent.Status.FAILED,
+                    OutboxEvent.Status.PROCESSING);
             if (claimed == 1) {
                 publish(event);
             }
