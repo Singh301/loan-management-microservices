@@ -103,5 +103,9 @@ springdoc:
     path: /swagger-ui.html
 
 logging:
+  structured:
+    format:
+      console: ecs
+
   level:
     com.loanmanagement: INFO
