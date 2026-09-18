@@ -8,7 +8,9 @@ Update the image registry in `Jenkinsfile` and `k8s/loan-services.yaml` before d
 
 ## 2. Create secrets
 
-Do not commit real credentials. Create the Kubernetes secret from your secure environment:
+Do not commit real credentials and do not apply `k8s/secret-template.yaml`. That file is only a placeholder/example.
+
+Create the Kubernetes Secret from your secure environment before running the Jenkins deployment:
 
 ```bash
 kubectl apply -f k8s/namespace.yaml
@@ -17,6 +19,18 @@ kubectl -n loan-management create secret generic loan-management-secrets \
   --from-literal=DB_PASSWORD="$DB_PASSWORD" \
   --from-literal=JWT_SECRET="$JWT_SECRET"
 ```
+
+For an existing secret, update it rather than creating a second copy:
+
+```bash
+kubectl -n loan-management create secret generic loan-management-secrets \
+  --from-literal=DB_USERNAME="$DB_USERNAME" \
+  --from-literal=DB_PASSWORD="$DB_PASSWORD" \
+  --from-literal=JWT_SECRET="$JWT_SECRET" \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+The Jenkins pipeline does not create or print secret values. Before deployment it verifies that `loan-management-secrets` exists and contains the required keys: `DB_USERNAME`, `DB_PASSWORD`, and `JWT_SECRET`. 
 
 ## 3. Deploy
 
