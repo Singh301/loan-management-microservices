@@ -28,10 +28,12 @@ public class RepaymentService {
     @Transactional
     public Repayment recordPayment(RepaymentRequestDto request) {
         LocalDate payDate = request.getPaymentDate() != null ? request.getPaymentDate() : LocalDate.now();
-
-        if (request.getTransactionRef() != null && !request.getTransactionRef().isBlank()
-                && repaymentRepository.existsByTransactionRef(request.getTransactionRef())) {
-            throw new DomainException("Payment transaction already processed", HttpStatus.CONFLICT, "PAYMENT_ALREADY_PROCESSED");
+        String transactionRef = request.getTransactionRef();
+        if (transactionRef != null) {
+            transactionRef = transactionRef.trim();
+            if (transactionRef.isBlank()) {
+                transactionRef = null;
+            }
         }
 
         EmiSchedule schedule = null;
@@ -52,12 +54,33 @@ public class RepaymentService {
                 .emiScheduleId(request.getEmiScheduleId())
                 .amount(request.getAmount())
                 .paymentMode(request.getPaymentMode())
-                .transactionRef(request.getTransactionRef())
+                .transactionRef(transactionRef)
                 .paymentDate(payDate)
                 .remarks(request.getRemarks())
                 .build();
 
-        repayment = repaymentRepository.save(repayment);
+        if (transactionRef == null) {
+            repayment = repaymentRepository.save(repayment);
+        } else {
+            int inserted = repaymentRepository.insertIfAbsent(
+                    request.getLoanId(),
+                    request.getEmiScheduleId(),
+                    request.getAmount(),
+                    request.getPaymentMode(),
+                    transactionRef,
+                    payDate,
+                    request.getRemarks());
+
+            if (inserted == 0) {
+                throw new DomainException(
+                        "Payment transaction already processed",
+                        HttpStatus.CONFLICT,
+                        "PAYMENT_ALREADY_PROCESSED");
+            }
+
+            repayment = repaymentRepository.findByTransactionRef(transactionRef)
+                    .orElseThrow(() -> new IllegalStateException("Payment was inserted but could not be reloaded"));
+        }
 
         if (schedule != null) {
             BigDecimal totalDue = schedule.getEmiAmount().add(schedule.getLateFee());
