@@ -23,9 +23,17 @@ public class IdempotencyService {
     private final ObjectMapper objectMapper;
 
     public String normalizeKey(String key) {
-        if (key == null || key.isBlank()) throw new DomainException("Idempotency-Key header is required", HttpStatus.BAD_REQUEST);
+        if (key == null || key.isBlank()) {
+            throw new DomainException(
+                    "Idempotency-Key header is required",
+                    HttpStatus.BAD_REQUEST);
+        }
         String normalized = key.trim();
-        if (normalized.length() < 8 || normalized.length() > 100) throw new DomainException("Idempotency-Key must contain between 8 and 100 characters", HttpStatus.BAD_REQUEST);
+        if (normalized.length() < 8 || normalized.length() > 100) {
+            throw new DomainException(
+                    "Idempotency-Key must contain between 8 and 100 characters",
+                    HttpStatus.BAD_REQUEST);
+        }
         return normalized;
     }
 
@@ -40,15 +48,22 @@ public class IdempotencyService {
                 .filter(r -> r.getExpiresAt().isAfter(LocalDateTime.now()))
                 .map(r -> {
                     if (!r.getRequestHash().equals(requestHash)) {
-                        throw new DomainException("Idempotency-Key was already used with a different request", HttpStatus.CONFLICT);
+                        throw new DomainException(
+                                "Idempotency-Key was already used with a different request",
+                                HttpStatus.CONFLICT);
                     }
-                    if (r.getStatus() != IdempotencyRecord.Status.COMPLETED || r.getResponseBody() == null) {
-                        throw new DomainException("Request with this Idempotency-Key is already in progress", HttpStatus.CONFLICT);
+                    if (r.getStatus() != IdempotencyRecord.Status.COMPLETED
+                            || r.getResponseBody() == null) {
+                        throw new DomainException(
+                                "Request with this Idempotency-Key is already in progress",
+                                HttpStatus.CONFLICT);
                     }
                     try {
                         return objectMapper.readValue(r.getResponseBody(), LoanResponseDto.class);
                     } catch (Exception e) {
-                        throw new DomainException("Unable to restore idempotent response", HttpStatus.INTERNAL_SERVER_ERROR);
+                        throw new DomainException(
+                                "Unable to restore idempotent response",
+                                HttpStatus.INTERNAL_SERVER_ERROR);
                     }
                 })
                 .orElse(null);
@@ -70,7 +85,9 @@ public class IdempotencyService {
                     .expiresAt(LocalDateTime.now().plusHours(24))
                     .build());
         } catch (DataIntegrityViolationException e) {
-            throw new DomainException("Request with this Idempotency-Key is already in progress or completed", HttpStatus.CONFLICT);
+            throw new DomainException(
+                    "Request with this Idempotency-Key is already in progress or completed",
+                    HttpStatus.CONFLICT);
         }
     }
 
@@ -87,7 +104,9 @@ public class IdempotencyService {
                 record.setStatus(IdempotencyRecord.Status.COMPLETED);
                 repository.save(record);
             } catch (Exception e) {
-                throw new DomainException("Unable to persist idempotent response", HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new DomainException(
+                        "Unable to persist idempotent response",
+                        HttpStatus.INTERNAL_SERVER_ERROR);
             }
         });
     }
@@ -96,11 +115,21 @@ public class IdempotencyService {
     @Transactional
     public void cleanupExpiredRecords() {
         long deleted = repository.deleteByExpiresAtBefore(LocalDateTime.now());
-        if (deleted > 0) org.slf4j.LoggerFactory.getLogger(IdempotencyService.class).info("Deleted {} expired idempotency records", deleted);
+        if (deleted > 0) {
+            org.slf4j.LoggerFactory.getLogger(IdempotencyService.class)
+                    .info("Deleted {} expired idempotency records", deleted);
+        }
     }
 
     public String requestHash(Object request) {
-        try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(objectMapper.writeValueAsBytes(request))); }
-        catch (Exception e) { throw new DomainException("Unable to calculate request hash", HttpStatus.INTERNAL_SERVER_ERROR); }
+        try {
+            byte[] serializedRequest = objectMapper.writeValueAsBytes(request);
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(serializedRequest);
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception e) {
+            throw new DomainException(
+                    "Unable to calculate request hash",
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
