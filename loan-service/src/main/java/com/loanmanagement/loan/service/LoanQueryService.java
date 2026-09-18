@@ -17,7 +17,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -28,23 +27,43 @@ public class LoanQueryService {
     private final LoanApplicationService applicationService;
 
     @Transactional(readOnly = true)
-    public Page<LoanResponseDto> listAll(LoanType type, int page, int size, String sortBy, String direction) {
-        Sort sort = direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+    public Page<LoanResponseDto> listAll(
+            LoanType type,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
+        Sort sort = direction.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
         PageRequest pr = PageRequest.of(page, size, sort);
-        Page<Loan> result = type != null ? loanRepository.findByLoanType(type, pr) : loanRepository.findAll(pr);
+        Page<Loan> result = type != null
+                ? loanRepository.findByLoanType(type, pr)
+                : loanRepository.findAll(pr);
         return result.map(this::toDto);
     }
 
     @Transactional(readOnly = true)
     public Page<LoanResponseDto> byStatus(LoanStatus status, int page, int size) {
-        return loanRepository.findByLoanStatus(status, PageRequest.of(page, size)).map(this::toDto);
+        return loanRepository.findByLoanStatus(
+                status,
+                PageRequest.of(page, size)).map(this::toDto);
     }
 
     @Transactional(readOnly = true)
-    public Page<LoanResponseDto> search(LoanType type, LoanStatus status,
-                                        BigDecimal min, BigDecimal max,
-                                        int page, int size) {
-        return loanRepository.search(type, status, min, max, PageRequest.of(page, size)).map(this::toDto);
+    public Page<LoanResponseDto> search(
+            LoanType type,
+            LoanStatus status,
+            BigDecimal min,
+            BigDecimal max,
+            int page,
+            int size) {
+        return loanRepository.search(
+                type,
+                status,
+                min,
+                max,
+                PageRequest.of(page, size)).map(this::toDto);
     }
 
     @Transactional(readOnly = true)
@@ -58,9 +77,11 @@ public class LoanQueryService {
         stats.put("overdueLoans", loanRepository.countByLoanStatus(LoanStatus.OVERDUE));
         stats.put("closedLoans", loanRepository.countByLoanStatus(LoanStatus.CLOSED));
         stats.put("totalLoanAmount", loanRepository.sumAllAmounts());
-        stats.put("approvedLoanAmount", loanRepository.sumAmountByStatus(LoanStatus.APPROVED)
-                .add(loanRepository.sumAmountByStatus(LoanStatus.ACTIVE))
-                .add(loanRepository.sumAmountByStatus(LoanStatus.DISBURSED)));
+        stats.put(
+                "approvedLoanAmount",
+                loanRepository.sumAmountByStatus(LoanStatus.APPROVED)
+                        .add(loanRepository.sumAmountByStatus(LoanStatus.ACTIVE))
+                        .add(loanRepository.sumAmountByStatus(LoanStatus.DISBURSED)));
         stats.put("averageLoanAmount", loanRepository.avgAmount());
         return stats;
     }
@@ -87,10 +108,17 @@ public class LoanQueryService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> foreclosureDetails(Long loanId) {
-        Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan", loanId));
-        BigDecimal outstanding = loan.getOutstandingPrincipal() != null ? loan.getOutstandingPrincipal() : loan.getLoanAmount();
-        BigDecimal lateFee = loan.getTotalLateFee() != null ? loan.getTotalLateFee() : BigDecimal.ZERO;
-        BigDecimal charge = outstanding.multiply(BigDecimal.valueOf(0.02)).setScale(2, RoundingMode.HALF_UP);
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan", loanId));
+        BigDecimal outstanding = loan.getOutstandingPrincipal() != null
+                ? loan.getOutstandingPrincipal()
+                : loan.getLoanAmount();
+        BigDecimal lateFee = loan.getTotalLateFee() != null
+                ? loan.getTotalLateFee()
+                : BigDecimal.ZERO;
+        BigDecimal charge = outstanding
+                .multiply(BigDecimal.valueOf(0.02))
+                .setScale(2, RoundingMode.HALF_UP);
         BigDecimal total = outstanding.add(lateFee).add(charge);
 
         Map<String, Object> result = new HashMap<>();
@@ -108,7 +136,8 @@ public class LoanQueryService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> statement(Long loanId) {
-        Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan", loanId));
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan", loanId));
         Map<String, Object> stmt = new HashMap<>();
         stmt.put("loanId", loan.getLoanId());
         stmt.put("customerId", loan.getCustomerId());
@@ -130,7 +159,8 @@ public class LoanQueryService {
 
     @Transactional
     public LoanResponseDto closeLoan(Long loanId) {
-        Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan", loanId));
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new ResourceNotFoundException("Loan", loanId));
         loan.setLoanStatus(LoanStatus.CLOSED);
         loan.setOutstandingPrincipal(BigDecimal.ZERO);
         loan.setRemainingInstallments(0);
