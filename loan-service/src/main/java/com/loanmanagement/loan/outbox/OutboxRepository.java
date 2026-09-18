@@ -33,4 +33,5 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
             Pageable pageable);
 
     long deleteByStatusAndProcessedAtBefore(OutboxEvent.Status status, LocalDateTime cutoff);
+    long countByStatus(OutboxEvent.Status status);
 }
