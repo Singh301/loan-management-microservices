@@ -80,6 +80,15 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: api-gateway
       terminationGracePeriodSeconds: 30
       containers:
         - name: api-gateway
@@ -142,6 +151,15 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: loan-service
       terminationGracePeriodSeconds: 30
       containers:
         - name: loan-service
@@ -204,6 +222,15 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: repayment-service
       terminationGracePeriodSeconds: 30
       containers:
         - name: repayment-service
