@@ -1,6 +1,5 @@
 package com.loanmanagement.auth.entity;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,9 +12,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SuppressFBWarnings(
-        value = {"EI_EXPOSE_REP", "EI_EXPOSE_REP2"},
-        justification = "JPA entity association intentionally exposes the managed User identity for persistence and lazy loading.")
 public class RefreshToken {
 
     @Id
