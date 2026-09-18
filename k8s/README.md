@@ -69,6 +69,10 @@ Application metrics are exposed by Spring Boot Actuator/Prometheus on the servic
 
 Servlet-based services use the shared `RequestIdFilter` to place `X-Request-Id` into the SLF4J MDC as `requestId` and return the same identifier in the response. This allows structured logs to be correlated across service boundaries. The API Gateway already propagates `X-Request-Id` on routed requests.
 
+### Distributed tracing
+
+The services use Micrometer Tracing with an OpenTelemetry bridge and W3C trace-context propagation. Trace sampling defaults to 10%. OTLP export is disabled by default to keep local development self-contained; enable it by setting `OTEL_TRACING_EXPORT_ENABLED=true` and providing `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` for an OpenTelemetry Collector or compatible backend.
+
 ## AWS target architecture
 
 For AWS, replace local infrastructure with managed services where appropriate:
