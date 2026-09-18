@@ -12,7 +12,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.support.WebExchangeBindException;
 
 import java.util.stream.Collectors;
 
@@ -27,7 +26,7 @@ public class GlobalExceptionHandler {
         return error(ex.getStatus(), ex.getMessage(), correlationId);
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, WebExchangeBindException.class})
+    @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidationException(
             Exception ex,
             @RequestHeader(value = ApiConstants.HEADER_CORRELATION_ID, required = false) String correlationId) {
@@ -35,12 +34,6 @@ public class GlobalExceptionHandler {
         String message = "Request validation failed";
         if (ex instanceof MethodArgumentNotValidException validation) {
             message = validation.getBindingResult().getFieldErrors().stream()
-                    .map(FieldError::getDefaultMessage)
-                    .filter(java.util.Objects::nonNull)
-                    .distinct()
-                    .collect(Collectors.joining(", "));
-        } else if (ex instanceof WebExchangeBindException validation) {
-            message = validation.getFieldErrors().stream()
                     .map(FieldError::getDefaultMessage)
                     .filter(java.util.Objects::nonNull)
                     .distinct()
