@@ -46,3 +46,8 @@ management:
       show-details: never
       probes:
         enabled: true
+
+logging:
+  structured:
+    format:
+      console: ecs
