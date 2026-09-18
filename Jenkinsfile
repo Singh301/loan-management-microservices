@@ -4,6 +4,8 @@ pipeline {
     options {
         timestamps()
         disableConcurrentBuilds()
+        skipDefaultCheckout(true)
+        buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '10'))
         timeout(time: 30, unit: 'MINUTES')
     }
     environment {
@@ -22,7 +24,9 @@ pipeline {
         }
 
         stage('Quality & Security') {
-            steps { sh 'mvn -B verify -Pquality -DskipTests' }
+            steps {
+                sh 'mvn -B verify -Pquality -DskipTests'
+            }
         }
 
         stage('Build Images') {
@@ -128,6 +132,7 @@ pipeline {
         always {
             junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
             archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/target/dependency-check-report.{html,json}', allowEmptyArchive: true
         }
         failure {
             echo 'Pipeline failed. Check the stage logs and Kubernetes rollout status.'
