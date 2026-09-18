@@ -44,6 +44,16 @@ jwt:
   secret: ${JWT_SECRET}
 
 management:
+  tracing:
+    sampling:
+      probability: ${TRACE_SAMPLING_PROBABILITY:0.10}
+    propagation:
+      type: w3c
+  otlp:
+    tracing:
+      export:
+        enabled: ${OTEL_TRACING_EXPORT_ENABLED:false}
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://otel-collector:4318/v1/traces}
   endpoints:
     web:
       exposure:
