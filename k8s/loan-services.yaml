@@ -58,14 +58,25 @@ spec:
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 18
           readinessProbe:
-            httpGet: { path: /actuator/health/readiness, port: 8080 }
-            initialDelaySeconds: 20
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
             periodSeconds: 10
+            failureThreshold: 3
           livenessProbe:
-            httpGet: { path: /actuator/health/liveness, port: 8080 }
-            initialDelaySeconds: 30
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
             periodSeconds: 15
+            failureThreshold: 3
           resources:
             requests: { cpu: 100m, memory: 256Mi }
             limits: { cpu: 500m, memory: 768Mi }
@@ -90,14 +101,25 @@ spec:
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8083
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 18
           readinessProbe:
-            httpGet: { path: /actuator/health/readiness, port: 8083 }
-            initialDelaySeconds: 25
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8083
             periodSeconds: 10
+            failureThreshold: 3
           livenessProbe:
-            httpGet: { path: /actuator/health/liveness, port: 8083 }
-            initialDelaySeconds: 40
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8083
             periodSeconds: 15
+            failureThreshold: 3
           resources:
             requests: { cpu: 200m, memory: 512Mi }
             limits: { cpu: "1", memory: 1Gi }
@@ -122,14 +144,25 @@ spec:
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 18
           readinessProbe:
-            httpGet: { path: /actuator/health/readiness, port: 8084 }
-            initialDelaySeconds: 25
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8084
             periodSeconds: 10
+            failureThreshold: 3
           livenessProbe:
-            httpGet: { path: /actuator/health/liveness, port: 8084 }
-            initialDelaySeconds: 40
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8084
             periodSeconds: 15
+            failureThreshold: 3
           resources:
             requests: { cpu: 200m, memory: 512Mi }
             limits: { cpu: "1", memory: 1Gi }
