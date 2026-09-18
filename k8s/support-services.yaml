@@ -183,6 +183,7 @@ spec:
               drop:
                 - ALL
           env:
+            # Development default only. Production should set DOCUMENT_STORAGE_TYPE=s3.
             - name: UPLOAD_DIR
               value: /app/uploads
             - name: JAVA_TOOL_OPTIONS
