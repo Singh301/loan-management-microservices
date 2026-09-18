@@ -7,6 +7,7 @@ import java.time.LocalDate;
 
 @Data
 public class CustomerRequestDto {
+    @Positive
     private Long userId;
 
     @NotBlank
