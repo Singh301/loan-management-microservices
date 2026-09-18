@@ -17,11 +17,20 @@ spec:
     metadata:
       labels: { app: auth-service }
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       containers:
         - name: auth-service
           image: ghcr.io/singh301/auth-service:1.0.0
           ports: [{ containerPort: 8081 }]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
@@ -70,11 +79,20 @@ spec:
     metadata:
       labels: { app: customer-service }
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       containers:
         - name: customer-service
           image: ghcr.io/singh301/customer-service:1.0.0
           ports: [{ containerPort: 8082 }]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
@@ -123,11 +141,20 @@ spec:
     metadata:
       labels: { app: document-service }
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       containers:
         - name: document-service
           image: ghcr.io/singh301/document-service:1.0.0
           ports: [{ containerPort: 8085 }]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: UPLOAD_DIR
               value: /app/uploads
@@ -178,11 +205,20 @@ spec:
     metadata:
       labels: { app: notification-service }
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       containers:
         - name: notification-service
           image: ghcr.io/singh301/notification-service:1.0.0
           ports: [{ containerPort: 8086 }]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
@@ -231,11 +267,20 @@ spec:
     metadata:
       labels: { app: audit-service }
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       containers:
         - name: audit-service
           image: ghcr.io/singh301/audit-service:1.0.0
           ports: [{ containerPort: 8087 }]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
@@ -284,11 +329,20 @@ spec:
     metadata:
       labels: { app: dashboard-service }
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       terminationGracePeriodSeconds: 30
       containers:
         - name: dashboard-service
           image: ghcr.io/singh301/dashboard-service:1.0.0
           ports: [{ containerPort: 8088 }]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           env:
             - name: JAVA_TOOL_OPTIONS
               value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
