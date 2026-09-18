@@ -8,8 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,11 +32,11 @@ class AuditServiceIdempotencyTest {
 
         service.record(event);
 
-        assertEquals(0, repository.insertIfAbsent(
+        verify(repository).insertIfAbsent(
                 eq(event.getEventId()),
                 eq(event.getEventType()),
                 eq(event.getAggregateId()),
                 eq(event.getAggregateType()),
-                anyString()));
+                anyString());
     }
 }
