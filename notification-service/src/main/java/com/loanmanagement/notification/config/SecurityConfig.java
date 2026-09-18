@@ -63,10 +63,11 @@ public class SecurityConfig {
                 if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
                     String token = header.substring(7);
                     if (jwt.validateToken(token)) {
-                        SecurityContextHolder.getContext().setAuthentication(
-                                new UsernamePasswordAuthenticationToken(
-                                        jwt.getUsername(token), null,
-                                        jwt.getRoles(token).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())));
+                        var auth = new UsernamePasswordAuthenticationToken(
+                                jwt.getUsername(token), null,
+                                jwt.getRoles(token).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+                        auth.setDetails(jwt.getUserId(token));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
                     }
                 }
             } catch (Exception ignored) {
