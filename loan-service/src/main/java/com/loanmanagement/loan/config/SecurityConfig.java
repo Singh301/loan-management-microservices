@@ -1,6 +1,7 @@
 package com.loanmanagement.loan.config;
 
 import com.loanmanagement.common.security.JwtTokenProvider;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +30,9 @@ import java.util.stream.Collectors;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed JWT filter bean.")
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
@@ -42,11 +46,18 @@ public class SecurityConfig {
                         .contentTypeOptions(contentType -> {})
                         .frameOptions(frame -> frame.deny())
                         .referrerPolicy(referrer -> referrer
-                                .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                                .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
+                                        .ReferrerPolicy.NO_REFERRER))
                         .permissionsPolicy(policy -> policy
                                 .policy("camera=(), microphone=(), geolocation=()")))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health/**", "/actuator/prometheus").permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/actuator/health/**",
+                                "/actuator/prometheus")
+                        .permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -80,7 +91,9 @@ public class SecurityConfig {
 
         private String extract(HttpServletRequest req) {
             String h = req.getHeader("Authorization");
-            return (StringUtils.hasText(h) && h.startsWith("Bearer ")) ? h.substring(7).trim() : null;
+            return (StringUtils.hasText(h) && h.startsWith("Bearer "))
+                    ? h.substring(7).trim()
+                    : null;
         }
     }
 }
