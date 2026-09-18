@@ -22,7 +22,6 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     Page<Loan> findByLoanStatus(LoanStatus status, Pageable pageable);
     Page<Loan> findByLoanType(LoanType type, Pageable pageable);
     Optional<Loan> findByDisbursementIdempotencyKey(String key);
-    boolean existsByDisbursementIdempotencyKey(String key);
 
     long countByLoanStatus(LoanStatus status);
 
