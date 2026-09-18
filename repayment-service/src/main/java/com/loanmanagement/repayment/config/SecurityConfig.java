@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .permissionsPolicy(policy -> policy
                                 .policy("camera=(), microphone=(), geolocation=()")))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health/**", "/actuator/prometheus").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
