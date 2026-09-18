@@ -25,6 +25,28 @@ public class CustomerResponseDto {
     private Customer.KycStatus kycStatus;
     private LocalDateTime createdAt;
 
+    private static String maskPan(String pan) {
+        if (pan == null || pan.isBlank()) {
+            return pan;
+        }
+        String normalized = pan.trim();
+        if (normalized.length() != 10) {
+            return "**********";
+        }
+        return normalized.substring(0, 5) + "****" + normalized.charAt(9);
+    }
+
+    private static String maskAadhaar(String aadhaar) {
+        if (aadhaar == null || aadhaar.isBlank()) {
+            return aadhaar;
+        }
+        String normalized = aadhaar.replaceAll("\\s+", "");
+        if (normalized.length() <= 4) {
+            return "********";
+        }
+        return "XXXX XXXX " + normalized.substring(normalized.length() - 4);
+    }
+
     public static CustomerResponseDto from(Customer c) {
         return CustomerResponseDto.builder()
                 .id(c.getId())
@@ -37,8 +59,8 @@ public class CustomerResponseDto {
                 .city(c.getCity())
                 .state(c.getState())
                 .pincode(c.getPincode())
-                .panNumber(c.getPanNumber())
-                .aadhaarNumber(c.getAadhaarNumber())
+                .panNumber(maskPan(c.getPanNumber()))
+                .aadhaarNumber(maskAadhaar(c.getAadhaarNumber()))
                 .kycStatus(c.getKycStatus())
                 .createdAt(c.getCreatedAt())
                 .build();
