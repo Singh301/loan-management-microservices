@@ -4,7 +4,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -14,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 public class JwtTokenProvider {
 
     private static final String TOKEN_TYPE_CLAIM = "tokenType";
@@ -22,27 +20,35 @@ public class JwtTokenProvider {
     private static final String REFRESH_TOKEN = "REFRESH";
     private static final String ROLES_CLAIM = "roles";
     private static final String USER_ID_CLAIM = "userId";
+    private static final int MIN_SECRET_LENGTH_BYTES = 32;
 
-    private final JwtProperties jwtProperties;
+    private final String jwtSecret;
+    private final long expiration;
+    private final long refreshExpiration;
+
+    public JwtTokenProvider(JwtProperties jwtProperties) {
+        this.jwtSecret = jwtProperties.getSecret();
+        this.expiration = jwtProperties.getExpiration();
+        this.refreshExpiration = jwtProperties.getRefreshExpiration();
+    }
 
     @jakarta.annotation.PostConstruct
     void validateSecret() {
-        String secret = jwtProperties.getSecret();
-        if (secret == null || secret.isBlank()) {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
             throw new IllegalStateException("JWT secret must be configured");
         }
-        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+        if (jwtSecret.getBytes(StandardCharsets.UTF_8).length < MIN_SECRET_LENGTH_BYTES) {
             throw new IllegalStateException("JWT secret must be at least 32 bytes for HS256");
         }
     }
 
     private SecretKey key() {
-        return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateAccessToken(String username, Long userId, List<String> roles) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + jwtProperties.getExpiration());
+        Date expiry = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .subject(username)
@@ -59,7 +65,7 @@ public class JwtTokenProvider {
 
     public String generateRefreshToken(String username) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + jwtProperties.getRefreshExpiration());
+        Date expiry = new Date(now.getTime() + refreshExpiration);
 
         return Jwts.builder()
                 .subject(username)
@@ -107,7 +113,7 @@ public class JwtTokenProvider {
     @SuppressWarnings("unchecked")
     public List<String> getRoles(String token) {
         List<String> roles = parseClaims(token).get(ROLES_CLAIM, List.class);
-        return roles == null ? List.of() : roles;
+        return roles == null ? List.of() : List.copyOf(roles);
     }
 
     public Claims parseClaims(String token) {
