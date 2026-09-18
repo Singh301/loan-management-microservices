@@ -10,7 +10,6 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 @Configuration
 public class GatewayConfig {
@@ -43,14 +42,16 @@ public class GatewayConfig {
     }
 
     private String clientIp(ServerWebExchange exchange) {
-        SocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
-        if (remoteAddress instanceof InetSocketAddress inetSocketAddress) {
-            if (inetSocketAddress.getAddress() != null) {
-                return inetSocketAddress.getAddress().getHostAddress();
-            }
-            String hostString = inetSocketAddress.getHostString();
-            return StringUtils.hasText(hostString) ? hostString : "unknown";
+        InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
+        if (remoteAddress == null) {
+            return "unknown";
         }
-        return "unknown";
+
+        if (remoteAddress.getAddress() != null) {
+            return remoteAddress.getAddress().getHostAddress();
+        }
+
+        String hostString = remoteAddress.getHostString();
+        return StringUtils.hasText(hostString) ? hostString : "unknown";
     }
 }
