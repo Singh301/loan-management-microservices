@@ -28,6 +28,9 @@ public class LocalDocumentStorage implements DocumentStorage {
 
     @Override
     public String store(MultipartFile file, String safeOriginalName) throws IOException {
+        if (file == null) {
+            throw new IOException("Uploaded file must not be null");
+        }
         Files.createDirectories(baseDirectory);
 
         String storedName = UUID.randomUUID() + extension(safeOriginalName);
