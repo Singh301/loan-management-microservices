@@ -56,3 +56,8 @@ management:
 springdoc:
   api-docs:
     path: /v3/api-docs
+
+logging:
+  structured:
+    format:
+      console: ecs
