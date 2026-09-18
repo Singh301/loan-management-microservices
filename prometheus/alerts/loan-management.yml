@@ -1,0 +1,57 @@
+groups:
+  - name: loan-management-availability
+    rules:
+      - alert: LoanManagementServiceDown
+        expr: up{job=~"discovery-server|api-gateway|auth-service|customer-service|loan-service|repayment-service|document-service|notification-service|audit-service|dashboard-service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Loan management service is down"
+          description: "{{ $labels.job }} has been unreachable for more than 2 minutes."
+
+      - alert: LoanManagementHighHttp5xxRate
+        expr: |
+          (
+            sum by (job) (rate(http_server_requests_seconds_count{job=~"api-gateway|auth-service|customer-service|loan-service|repayment-service|document-service|notification-service|audit-service|dashboard-service",status=~"5.."}[5m]))
+          /
+            clamp_min(sum by (job) (rate(http_server_requests_seconds_count{job=~"api-gateway|auth-service|customer-service|loan-service|repayment-service|document-service|notification-service|audit-service|dashboard-service"}[5m])), 0.001)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx rate"
+          description: "{{ $labels.job }} has more than 5% HTTP 5xx responses over the last 5 minutes."
+
+      - alert: LoanManagementHikariPoolSaturated
+        expr: |
+          (
+            max by (job) (hikaricp_connections_pending{job=~"auth-service|customer-service|loan-service|repayment-service|document-service|notification-service|audit-service|dashboard-service"})
+          ) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool is saturated"
+          description: "{{ $labels.job }} has waiting database connections for at least 5 minutes."
+
+  - name: loan-management-outbox
+    rules:
+      - alert: LoanOutboxBacklogGrowing
+        expr: loan_outbox_pending_events > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Loan outbox backlog is high"
+          description: "Loan service has more than 100 pending outbox events."
+
+      - alert: LoanOutboxFailedEvents
+        expr: loan_outbox_failed_events > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Loan outbox contains failed events"
+          description: "Loan service has failed outbox events waiting for retry or manual recovery."
