@@ -15,6 +15,7 @@ import com.loanmanagement.common.exception.DomainException;
 import com.loanmanagement.common.exception.ResourceNotFoundException;
 import com.loanmanagement.common.security.JwtProperties;
 import com.loanmanagement.common.security.JwtTokenProvider;
+import com.loanmanagement.common.security.TokenHash;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -99,7 +100,7 @@ public class AuthService {
             throw new DomainException("Invalid refresh token", HttpStatus.UNAUTHORIZED);
         }
 
-        RefreshToken stored = refreshTokenRepository.findByToken(refreshToken)
+        RefreshToken stored = refreshTokenRepository.findByTokenHash(TokenHash.sha256(refreshToken))
                 .orElseThrow(() -> new DomainException("Invalid refresh token", HttpStatus.UNAUTHORIZED));
 
         if (stored.isRevoked() || stored.isExpired()) {
@@ -138,7 +139,7 @@ public class AuthService {
         }
 
         if (refreshToken != null && jwtTokenProvider.validateRefreshToken(refreshToken)) {
-            refreshTokenRepository.findByToken(refreshToken).ifPresent(rt -> {
+            refreshTokenRepository.findByTokenHash(TokenHash.sha256(refreshToken)).ifPresent(rt -> {
                 rt.setRevoked(true);
                 refreshTokenRepository.save(rt);
             });
@@ -234,7 +235,7 @@ public class AuthService {
     private String createRefreshToken(User user) {
         String token = jwtTokenProvider.generateRefreshToken(user.getUsername());
         RefreshToken refreshToken = RefreshToken.builder()
-                .token(token)
+                .tokenHash(TokenHash.sha256(token))
                 .user(user)
                 .expiryDate(LocalDateTime.now().plus(Duration.ofMillis(jwtProperties.getRefreshExpiration())))
                 .build();
