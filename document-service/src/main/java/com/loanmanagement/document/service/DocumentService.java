@@ -112,6 +112,44 @@ public class DocumentService {
         }
     }
 
+    private boolean matchesSignature(String contentType, byte[] header) {
+        return switch (contentType) {
+            case "application/pdf" ->
+                    header.length >= 5
+                            && header[0] == '%'
+                            && header[1] == 'P'
+                            && header[2] == 'D'
+                            && header[3] == 'F'
+                            && header[4] == '-';
+            case "image/jpeg" ->
+                    header.length >= 3
+                            && (header[0] & 0xFF) == 0xFF
+                            && (header[1] & 0xFF) == 0xD8
+                            && (header[2] & 0xFF) == 0xFF;
+            case "image/png" ->
+                    header.length >= 8
+                            && (header[0] & 0xFF) == 0x89
+                            && (header[1] & 0xFF) == 0x50
+                            && (header[2] & 0xFF) == 0x4E
+                            && (header[3] & 0xFF) == 0x47
+                            && (header[4] & 0xFF) == 0x0D
+                            && (header[5] & 0xFF) == 0x0A
+                            && (header[6] & 0xFF) == 0x1A
+                            && (header[7] & 0xFF) == 0x0A;
+            case "image/webp" ->
+                    header.length >= 12
+                            && header[0] == 'R'
+                            && header[1] == 'I'
+                            && header[2] == 'F'
+                            && header[3] == 'F'
+                            && header[8] == 'W'
+                            && header[9] == 'E'
+                            && header[10] == 'B'
+                            && header[11] == 'P';
+            default -> false;
+        };
+    }
+
     private void validate(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new DomainException("File is empty", HttpStatus.BAD_REQUEST);
@@ -122,6 +160,15 @@ public class DocumentService {
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_TYPES.contains(contentType)) {
             throw new DomainException("Only PDF, JPEG, PNG, WEBP allowed", HttpStatus.BAD_REQUEST);
+        }
+
+        try (java.io.InputStream inputStream = file.getInputStream()) {
+            byte[] header = inputStream.readNBytes(12);
+            if (!matchesSignature(contentType, header)) {
+                throw new DomainException("File content does not match declared type", HttpStatus.BAD_REQUEST);
+            }
+        } catch (IOException ex) {
+            throw new DomainException("Unable to validate uploaded file", HttpStatus.BAD_REQUEST);
         }
     }
 }
