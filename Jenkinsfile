@@ -132,7 +132,8 @@ pipeline {
         always {
             junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
             archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
-            archiveArtifacts artifacts: '**/target/dependency-check-report.{html,json}', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/target/dependency-check-report.html', allowEmptyArchive: true
+            archiveArtifacts artifacts: '**/target/dependency-check-report.json', allowEmptyArchive: true
         }
         failure {
             echo 'Pipeline failed. Check the stage logs and Kubernetes rollout status.'
