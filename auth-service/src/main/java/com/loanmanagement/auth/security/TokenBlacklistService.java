@@ -1,6 +1,7 @@
 package com.loanmanagement.auth.security;
 
 import com.loanmanagement.common.security.JwtProperties;
+import com.loanmanagement.common.security.TokenHash;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class TokenBlacklistService {
         }
 
         redisTemplate.opsForValue().set(
-                BLACKLIST_PREFIX + token,
+                BLACKLIST_PREFIX + TokenHash.sha256(token),
                 "1",
                 jwtProperties.getExpiration(),
                 TimeUnit.MILLISECONDS
