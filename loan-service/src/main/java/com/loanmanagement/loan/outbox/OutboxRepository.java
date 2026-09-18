@@ -34,4 +34,30 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
 
     long deleteByStatusAndProcessedAtBefore(OutboxEvent.Status status, LocalDateTime cutoff);
     long countByStatus(OutboxEvent.Status status);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("""
+            update OutboxEvent e
+            set e.status = 'PROCESSING',
+                e.processingAt = :now,
+                e.nextRetryAt = null
+            where e.id = :id
+              and (
+                    (e.status = 'PENDING'
+                        and (e.nextRetryAt is null or e.nextRetryAt <= :now))
+                    or
+                    (e.status = 'FAILED'
+                        and e.retryCount < :maxRetries
+                        and (e.nextRetryAt is null or e.nextRetryAt <= :now))
+                    or
+                    (e.status = 'PROCESSING'
+                        and e.processingAt is not null
+                        and e.processingAt <= :staleBefore)
+                  )
+            """)
+    int claimForProcessing(
+            @org.springframework.data.repository.query.Param("id") Long id,
+            @org.springframework.data.repository.query.Param("now") LocalDateTime now,
+            @org.springframework.data.repository.query.Param("maxRetries") int maxRetries,
+            @org.springframework.data.repository.query.Param("staleBefore") LocalDateTime staleBefore);
 }
