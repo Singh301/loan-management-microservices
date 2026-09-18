@@ -14,6 +14,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     java.util.Optional<Notification> findByEventId(String eventId);
     List<Notification> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
     List<Notification> findByUserIdOrderByCreatedAtDesc(Long userId);
+    java.util.Optional<Notification> findByIdAndCustomerId(Long id, Long customerId);
     @Modifying
     @Query(value = """
             INSERT IGNORE INTO notifications
