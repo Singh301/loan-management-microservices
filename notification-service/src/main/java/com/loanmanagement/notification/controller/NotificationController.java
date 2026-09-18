@@ -2,11 +2,13 @@ package com.loanmanagement.notification.controller;
 
 import com.loanmanagement.common.dto.ApiResponse;
 import com.loanmanagement.notification.entity.Notification;
+import com.loanmanagement.notification.service.NotificationOwnershipService;
 import com.loanmanagement.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,17 +20,26 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final NotificationOwnershipService notificationOwnershipService;
 
     @GetMapping("/customer/{customerId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<Notification>>> getByCustomer(@PathVariable Long customerId) {
+    public ResponseEntity<ApiResponse<List<Notification>>> getByCustomer(
+            @PathVariable Long customerId, Authentication authentication) {
+        notificationOwnershipService.validateCustomerAccess(customerId, authentication);
         return ResponseEntity.ok(ApiResponse.success(notificationService.getByCustomer(customerId)));
     }
 
     @PutMapping("/{id}/read")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> markRead(@PathVariable Long id) {
-        notificationService.markRead(id);
+    public ResponseEntity<ApiResponse<Void>> markRead(
+            @PathVariable Long id, Authentication authentication) {
+        Long customerId = notificationOwnershipService.currentCustomerId(authentication);
+        if (customerId == null) {
+            notificationService.markRead(id);
+        } else {
+            notificationService.markReadForCustomer(id, customerId);
+        }
         return ResponseEntity.ok(ApiResponse.success("Marked as read", null));
     }
 }
