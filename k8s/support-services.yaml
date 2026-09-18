@@ -4,6 +4,12 @@ metadata:
   name: auth-service
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 2
   selector:
     matchLabels: { app: auth-service }
@@ -51,6 +57,12 @@ metadata:
   name: customer-service
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 2
   selector:
     matchLabels: { app: customer-service }
@@ -98,6 +110,12 @@ metadata:
   name: document-service
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 2
   selector:
     matchLabels: { app: document-service }
@@ -147,6 +165,12 @@ metadata:
   name: notification-service
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 2
   selector:
     matchLabels: { app: notification-service }
@@ -194,6 +218,12 @@ metadata:
   name: audit-service
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 2
   selector:
     matchLabels: { app: audit-service }
@@ -241,6 +271,12 @@ metadata:
   name: dashboard-service
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 2
   selector:
     matchLabels: { app: dashboard-service }
@@ -281,3 +317,75 @@ spec:
           resources:
             requests: { cpu: 100m, memory: 256Mi }
             limits: { cpu: 500m, memory: 768Mi }
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth-service
+  namespace: loan-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: auth-service
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: customer-service
+  namespace: loan-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: customer-service
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: document-service
+  namespace: loan-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: document-service
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: notification-service
+  namespace: loan-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: notification-service
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: audit-service
+  namespace: loan-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: audit-service
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: dashboard-service
+  namespace: loan-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: dashboard-service
