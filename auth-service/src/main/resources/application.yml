@@ -19,7 +19,7 @@ spring:
       max-lifetime: ${DB_MAX_LIFETIME_MS:1800000}
       keepalive-time: ${DB_KEEPALIVE_MS:120000}
       leak-detection-threshold: ${DB_LEAK_DETECTION_THRESHOLD_MS:0}
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/auth_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/auth_db?createDatabaseIfNotExist=true&useSSL=${DB_SSL:false}&requireSSL=${DB_SSL:false}&allowPublicKeyRetrieval=${DB_ALLOW_PUBLIC_KEY_RETRIEVAL:true}&serverTimezone=UTC
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
