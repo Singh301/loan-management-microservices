@@ -1,6 +1,7 @@
 package com.loanmanagement.dashboard.controller;
 
 import com.loanmanagement.common.dto.ApiResponse;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -17,6 +18,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/dashboard")
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed RestTemplate bean.")
 public class DashboardController {
 
     private final RestTemplate restTemplate;
