@@ -16,7 +16,7 @@ metadata:
   name: api-gateway
   namespace: loan-management
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: api-gateway
   ports:
