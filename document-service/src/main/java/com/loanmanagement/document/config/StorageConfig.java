@@ -19,7 +19,11 @@ public class StorageConfig {
     public S3Client s3Client(
             @Value("${document.storage.s3.region}") String region,
             @Value("${document.storage.s3.endpoint:}") String endpoint,
-            @Value("${document.storage.s3.path-style-access:false}") boolean pathStyleAccess) {
+            @Value("${document.storage.s3.path-style-access:false}") boolean pathStyleAccess,
+            @Value("${document.storage.s3.bucket:}") String bucket) {
+        if (bucket.isBlank()) {
+            throw new IllegalStateException("DOCUMENT_S3_BUCKET must be configured when document.storage.type=s3");
+        }
 
         var builder = S3Client.builder()
                 .region(Region.of(region))
