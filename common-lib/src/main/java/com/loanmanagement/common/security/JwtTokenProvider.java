@@ -25,6 +25,17 @@ public class JwtTokenProvider {
 
     private final JwtProperties jwtProperties;
 
+    @jakarta.annotation.PostConstruct
+    void validateSecret() {
+        String secret = jwtProperties.getSecret();
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT secret must be configured");
+        }
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("JWT secret must be at least 32 bytes for HS256");
+        }
+    }
+
     private SecretKey key() {
         return Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
