@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleDomainException(
             DomainException ex,
             @RequestHeader(value = ApiConstants.HEADER_CORRELATION_ID, required = false) String correlationId) {
-        return error(ex.getStatus(), ex.getMessage(), correlationId);
+        return error(ex.getStatus(), ex.getMessage(), ex.getErrorCode(), correlationId);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -43,21 +43,21 @@ public class GlobalExceptionHandler {
         if (message.isBlank()) {
             message = "Request validation failed";
         }
-        return error(HttpStatus.BAD_REQUEST, message, correlationId);
+        return error(HttpStatus.BAD_REQUEST, message, "VALIDATION_ERROR", correlationId);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(
             ConstraintViolationException ex,
             @RequestHeader(value = ApiConstants.HEADER_CORRELATION_ID, required = false) String correlationId) {
-        return error(HttpStatus.BAD_REQUEST, "Request validation failed", correlationId);
+        return error(HttpStatus.BAD_REQUEST, "Request validation failed", "VALIDATION_ERROR", correlationId);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnreadableMessage(
             HttpMessageNotReadableException ex,
             @RequestHeader(value = ApiConstants.HEADER_CORRELATION_ID, required = false) String correlationId) {
-        return error(HttpStatus.BAD_REQUEST, "Request body is invalid or malformed", correlationId);
+        return error(HttpStatus.BAD_REQUEST, "Request body is invalid or malformed", "INVALID_REQUEST", correlationId);
     }
 
     @ExceptionHandler(Exception.class)
@@ -65,16 +65,17 @@ public class GlobalExceptionHandler {
             Exception ex,
             @RequestHeader(value = ApiConstants.HEADER_CORRELATION_ID, required = false) String correlationId) {
         log.error("Unexpected API error [requestId={}]", correlationId, ex);
-        return error(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", correlationId);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", "INTERNAL_ERROR", correlationId);
     }
 
     private ResponseEntity<ApiResponse<Void>> error(
-            HttpStatus status, String message, String correlationId) {
+            HttpStatus status, String message, String errorCode, String correlationId) {
         return ResponseEntity.status(status)
                 .header(ApiConstants.HEADER_CORRELATION_ID, correlationId == null ? "" : correlationId)
                 .body(ApiResponse.<Void>builder()
                         .success(false)
                         .message(message)
+                        .errorCode(errorCode)
                         .timestamp(java.time.Instant.now())
                         .correlationId(correlationId)
                         .build());
