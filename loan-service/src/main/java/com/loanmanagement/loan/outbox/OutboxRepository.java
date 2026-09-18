@@ -11,8 +11,26 @@ import java.util.List;
 
 @Repository
 public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
-    @Query("select e from OutboxEvent e where e.status in :statuses and (e.nextRetryAt is null or e.nextRetryAt <= :now) order by e.createdAt asc")
-    List<OutboxEvent> findReady(@Param("statuses") List<OutboxEvent.Status> statuses, @Param("now") LocalDateTime now, Pageable pageable);
+    @Query("""
+            select e from OutboxEvent e
+            where
+                (e.status = com.loanmanagement.loan.outbox.OutboxEvent$Status.PENDING
+                    and (e.nextRetryAt is null or e.nextRetryAt <= :now))
+                or
+                (e.status = com.loanmanagement.loan.outbox.OutboxEvent$Status.FAILED
+                    and e.retryCount < :maxRetries
+                    and (e.nextRetryAt is null or e.nextRetryAt <= :now))
+                or
+                (e.status = com.loanmanagement.loan.outbox.OutboxEvent$Status.PROCESSING
+                    and e.processingAt is not null
+                    and e.processingAt <= :staleBefore)
+            order by e.createdAt asc
+            """)
+    List<OutboxEvent> findReady(
+            @Param("now") LocalDateTime now,
+            @Param("maxRetries") int maxRetries,
+            @Param("staleBefore") LocalDateTime staleBefore,
+            Pageable pageable);
 
     long deleteByStatusAndProcessedAtBefore(OutboxEvent.Status status, LocalDateTime cutoff);
 }
