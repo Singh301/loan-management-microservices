@@ -3,6 +3,7 @@ package com.loanmanagement.common.exception;
 import com.loanmanagement.common.constants.ApiConstants;
 import com.loanmanagement.common.dto.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.support.WebExchangeBindException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(DomainException.class)
@@ -69,6 +71,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(
             Exception ex,
             @RequestHeader(value = ApiConstants.HEADER_CORRELATION_ID, required = false) String correlationId) {
+        log.error("Unexpected API error [requestId={}]", correlationId, ex);
         return error(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", correlationId);
     }
 
