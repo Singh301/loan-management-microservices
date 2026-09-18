@@ -7,6 +7,7 @@ import com.loanmanagement.common.exception.DomainException;
 import com.loanmanagement.common.exception.ResourceNotFoundException;
 import com.loanmanagement.loan.domain.LoanStateMachine;
 import com.loanmanagement.loan.dto.LoanResponseDto;
+import com.loanmanagement.loan.idempotency.IdempotencyService;
 import com.loanmanagement.loan.entity.Loan;
 import com.loanmanagement.loan.entity.LoanStatus;
 import com.loanmanagement.loan.outbox.OutboxService;
@@ -29,15 +30,25 @@ public class LoanDisbursementService {
     private final LoanStateMachine stateMachine;
     private final OutboxService outboxService;
     private final LoanApplicationService applicationService;
+    private final IdempotencyService idempotencyService;
 
     @Transactional
     public LoanResponseDto disburse(Long loanId, String idempotencyKey, String disbursedBy) {
-        // Idempotency check
-        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-            var existing = loanRepository.findByDisbursementIdempotencyKey(idempotencyKey);
-            if (existing.isPresent()) {
-                log.info("Idempotent hit for key {} → returning existing loan {}", idempotencyKey, loanId);
-                return applicationService.getById(existing.get().getLoanId());
+        String key = (idempotencyKey != null && !idempotencyKey.isBlank())
+                ? idempotencyKey.trim()
+                : UUID.randomUUID().toString();
+        boolean clientProvidedIdempotencyKey = idempotencyKey != null && !idempotencyKey.isBlank();
+
+        if (clientProvidedIdempotencyKey && (key.length() < 8 || key.length() > 100)) {
+            throw new DomainException("Idempotency-Key must contain between 8 and 100 characters", HttpStatus.BAD_REQUEST);
+        }
+
+        // Keep the legacy loan-column lookup for records created before the shared idempotency ledger.
+        if (clientProvidedIdempotencyKey) {
+            var legacy = loanRepository.findByDisbursementIdempotencyKey(key);
+            if (legacy.isPresent()) {
+                log.info("Idempotent hit for legacy disbursement key {}", key);
+                return applicationService.getById(legacy.get().getLoanId());
             }
         }
 
@@ -46,12 +57,19 @@ public class LoanDisbursementService {
 
         stateMachine.validateTransition(loan.getLoanStatus(), LoanStatus.DISBURSED);
 
-        String key = (idempotencyKey != null && !idempotencyKey.isBlank())
-                ? idempotencyKey
-                : UUID.randomUUID().toString();
+        String requestHash = null;
+        if (clientProvidedIdempotencyKey) {
+            requestHash = idempotencyService.requestHash(
+                    IdempotencyService.DISBURSE_OPERATION + ":" + loanId);
 
-        if (loanRepository.existsByDisbursementIdempotencyKey(key)) {
-            throw new DomainException("Idempotency key already used", HttpStatus.CONFLICT);
+            LoanResponseDto existing = idempotencyService.findExisting(
+                    key, requestHash, IdempotencyService.DISBURSE_OPERATION);
+            if (existing != null) {
+                log.info("Idempotent hit for disbursement key {}", key);
+                return existing;
+            }
+
+            idempotencyService.claim(key, requestHash, IdempotencyService.DISBURSE_OPERATION);
         }
 
         loan.setLoanStatus(LoanStatus.DISBURSED);
@@ -85,7 +103,14 @@ public class LoanDisbursementService {
                 payload
         ));
 
-        log.info("Loan {} disbursed by {} (key={})", loanId, disbursedBy, key);
-        return applicationService.getById(loan.getLoanId());
+        LoanResponseDto response = applicationService.getById(loan.getLoanId());
+
+        if (clientProvidedIdempotencyKey) {
+            idempotencyService.complete(key, response, IdempotencyService.DISBURSE_OPERATION);
+        }
+
+        log.info("Loan {} disbursed by {} (key={})", loanId, disbursedBy,
+                clientProvidedIdempotencyKey ? key : "generated");
+        return response;
     }
 }
