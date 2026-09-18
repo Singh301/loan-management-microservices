@@ -5,6 +5,7 @@ import com.loanmanagement.common.exception.ResourceNotFoundException;
 import com.loanmanagement.document.entity.Document;
 import com.loanmanagement.document.repository.DocumentRepository;
 import com.loanmanagement.document.storage.DocumentStorage;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -22,6 +23,9 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains managed repository and storage beans.")
 public class DocumentService {
 
     private static final Set<String> ALLOWED_TYPES = Set.of(
@@ -37,7 +41,10 @@ public class DocumentService {
                            String documentType, String uploadedBy) {
         validate(file);
 
-        String original = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+        String original = file.getOriginalFilename();
+        if (original == null || original.isBlank()) {
+            original = "file";
+        }
         String safeOriginal = Paths.get(original.replace("\\", "/")).getFileName().toString();
 
         String storageKey = null;
