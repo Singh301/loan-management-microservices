@@ -21,6 +21,7 @@ public class OutboxPublisher {
     private static final String TOPIC = "loan.events";
     private static final int BATCH_SIZE = 50;
     private static final int MAX_RETRIES = 8;
+    private static final int PROCESSING_LEASE_MINUTES = 2;
     private final OutboxRepository repository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
@@ -28,19 +29,31 @@ public class OutboxPublisher {
     @Scheduled(fixedDelayString = "${outbox.publisher.delay-ms:2000}")
     @Transactional
     public void publishPendingEvents() {
-        List<OutboxEvent> events = repository.findReady(List.of(OutboxEvent.Status.PENDING, OutboxEvent.Status.FAILED), LocalDateTime.now(), PageRequest.of(0, BATCH_SIZE));
+        LocalDateTime now = LocalDateTime.now();
+        List<OutboxEvent> events = repository.findReady(
+                now, MAX_RETRIES, now.minusMinutes(PROCESSING_LEASE_MINUTES), PageRequest.of(0, BATCH_SIZE));
         for (OutboxEvent event : events) publish(event);
     }
 
     private void publish(OutboxEvent event) {
         try {
-            event.setStatus(OutboxEvent.Status.PROCESSING); repository.save(event);
+            event.setStatus(OutboxEvent.Status.PROCESSING);
+            event.setProcessingAt(LocalDateTime.now());
+            event.setNextRetryAt(null);
+            repository.save(event);
             JsonNode payload = objectMapper.readTree(event.getPayload());
             kafkaTemplate.send(TOPIC, event.getAggregateId(), payload).get(10, TimeUnit.SECONDS);
-            event.setStatus(OutboxEvent.Status.PROCESSED); event.setProcessedAt(LocalDateTime.now()); event.setLastError(null); repository.save(event);
+            event.setStatus(OutboxEvent.Status.PROCESSED);
+            event.setProcessedAt(LocalDateTime.now());
+            event.setProcessingAt(null);
+            event.setLastError(null);
+            repository.save(event);
         } catch (Exception ex) {
             int retries = event.getRetryCount() == null ? 0 : event.getRetryCount(); retries++;
-            event.setRetryCount(retries); event.setLastError(trim(ex.getMessage())); event.setStatus(OutboxEvent.Status.FAILED);
+            event.setRetryCount(retries);
+            event.setLastError(trim(ex.getMessage()));
+            event.setStatus(OutboxEvent.Status.FAILED);
+            event.setProcessingAt(null);
             if (retries < MAX_RETRIES) event.setNextRetryAt(LocalDateTime.now().plusSeconds(Math.min(3600, 1L << Math.min(retries, 10))));
             else event.setNextRetryAt(null);
             repository.save(event);
