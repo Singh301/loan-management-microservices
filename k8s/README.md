@@ -46,6 +46,8 @@ kubectl apply -f k8s/support-services.yaml
 
 The network policy baseline denies all ingress and egress in the application namespace, then allows same-namespace traffic and DNS lookups. Add narrowly scoped policies when external dependencies or ingress controllers are introduced.
 
+Development MySQL persistence is provided by the `mysql-data` PVC using the k3s `local-path` storage class. This is node-local development storage, not a production HA database. For AWS production, use RDS with automated backups, multi-AZ configuration as required, and managed failover rather than this manifest.
+
 ## 4. Verify
 
 ```bash
