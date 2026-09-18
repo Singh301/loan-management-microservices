@@ -13,6 +13,7 @@ import com.loanmanagement.loan.idempotency.IdempotencyService;
 import com.loanmanagement.loan.outbox.OutboxService;
 import com.loanmanagement.loan.repository.LoanRepository;
 import com.loanmanagement.loan.util.EmiCalculator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,9 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains managed loan service beans.")
 public class LoanApplicationService {
     private final LoanRepository loanRepository;
     private final LoanStateMachine stateMachine;
