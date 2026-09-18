@@ -27,6 +27,9 @@ public class CustomerService {
         if (request.getPanNumber() != null && customerRepository.existsByPanNumber(request.getPanNumber())) {
             throw new DomainException("PAN already registered", HttpStatus.CONFLICT);
         }
+        if (request.getUserId() != null && customerRepository.existsByUserId(request.getUserId())) {
+            throw new DomainException("Customer already exists for user", HttpStatus.CONFLICT, "CUSTOMER_ALREADY_EXISTS");
+        }
 
         Customer customer = Customer.builder()
                 .userId(request.getUserId())
