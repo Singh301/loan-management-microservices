@@ -26,8 +26,10 @@ public class EmiScheduleService {
     @Transactional
     public List<EmiSchedule> generateSchedule(Long loanId, BigDecimal principal, BigDecimal annualRate,
                                                int tenureMonths, BigDecimal emi, LocalDate startDate) {
-        if (emiScheduleRepository.existsByLoanId(loanId)) {
-            throw new DomainException("EMI schedule already exists for loan " + loanId, HttpStatus.CONFLICT);
+        List<EmiSchedule> existingSchedules = emiScheduleRepository.findByLoanIdOrderByInstallmentNumberAsc(loanId);
+        if (!existingSchedules.isEmpty()) {
+            log.info("Returning existing EMI schedule for loan {}", loanId);
+            return existingSchedules;
         }
 
         List<EmiSchedule> schedules = new ArrayList<>();
@@ -61,7 +63,18 @@ public class EmiScheduleService {
             }
         }
 
-        return emiScheduleRepository.saveAll(schedules);
+        for (EmiSchedule schedule : schedules) {
+            emiScheduleRepository.insertIfAbsent(
+                    schedule.getLoanId(),
+                    schedule.getInstallmentNumber(),
+                    schedule.getDueDate(),
+                    schedule.getPrincipalComponent(),
+                    schedule.getInterestComponent(),
+                    schedule.getEmiAmount(),
+                    schedule.getStatus().name());
+        }
+
+        return emiScheduleRepository.findByLoanIdOrderByInstallmentNumberAsc(loanId);
     }
 
     @Transactional(readOnly = true)
