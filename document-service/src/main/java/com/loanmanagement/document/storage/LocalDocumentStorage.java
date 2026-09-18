@@ -1,6 +1,7 @@
 package com.loanmanagement.document.storage;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Component
+@ConditionalOnProperty(name = "document.storage.type", havingValue = "local", matchIfMissing = true)
 public class LocalDocumentStorage implements DocumentStorage {
 
     private final Path baseDirectory;
