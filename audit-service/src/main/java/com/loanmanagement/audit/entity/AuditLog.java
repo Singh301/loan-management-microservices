@@ -18,6 +18,9 @@ public class AuditLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "event_id", nullable = false, unique = true, length = 64)
+    private String eventId;
+
     @Column(name = "event_type", nullable = false)
     private String eventType;
 
