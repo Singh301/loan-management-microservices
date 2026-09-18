@@ -35,7 +35,8 @@ public class LocalDocumentStorage implements DocumentStorage {
 
         String storedName = UUID.randomUUID() + extension(safeOriginalName);
         Path target = baseDirectory.resolve(storedName).normalize();
-        if (!target.getParent().equals(baseDirectory)) {
+        Path parent = target.getParent();
+        if (!baseDirectory.equals(parent)) {
             throw new IOException("Invalid local storage path");
         }
 
