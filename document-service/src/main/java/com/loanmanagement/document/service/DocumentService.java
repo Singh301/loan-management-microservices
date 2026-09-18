@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,7 +49,11 @@ public class DocumentService {
         if (original == null || original.isBlank()) {
             original = "file";
         }
-        String safeOriginal = Paths.get(original.replace("\\", "/")).getFileName().toString();
+        Path originalPath = Paths.get(original.replace("\\", "/")).getFileName();
+        if (originalPath == null) {
+            throw new DomainException("Invalid file name", HttpStatus.BAD_REQUEST);
+        }
+        String safeOriginal = originalPath.toString();
 
         String storageKey = null;
         try {
