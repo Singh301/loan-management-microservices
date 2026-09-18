@@ -11,6 +11,7 @@ import java.util.List;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
+    java.util.Optional<Notification> findByEventId(String eventId);
     List<Notification> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
     List<Notification> findByUserIdOrderByCreatedAtDesc(Long userId);
     @Modifying
