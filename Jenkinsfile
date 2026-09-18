@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         REGISTRY = 'ghcr.io/singh301'
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_TAG = "v${BUILD_NUMBER}"
         GHCR_CREDENTIALS = 'ghcr-credentials'
     }
 
