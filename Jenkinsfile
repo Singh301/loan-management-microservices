@@ -117,6 +117,26 @@ pipeline {
                   for service in discovery-server api-gateway auth-service customer-service loan-service repayment-service document-service notification-service audit-service dashboard-service; do
                     kubectl -n loan-management rollout status deployment/${service} --timeout=180s
                   done
+
+                  echo "Verifying deployed image tags and available replicas..."
+                  for service in discovery-server api-gateway auth-service customer-service loan-service repayment-service document-service notification-service audit-service dashboard-service; do
+                    expected="${REGISTRY}/${service}:${IMAGE_TAG}"
+                    actual=$(kubectl -n loan-management get deployment "${service}" -o jsonpath='{.spec.template.spec.containers[0].image}')
+                    available=$(kubectl -n loan-management get deployment "${service}" -o jsonpath='{.status.availableReplicas}')
+                    desired=$(kubectl -n loan-management get deployment "${service}" -o jsonpath='{.spec.replicas}')
+
+                    if [ "$actual" != "$expected" ]; then
+                      echo "ERROR: ${service} expected image ${expected}, found ${actual}"
+                      exit 1
+                    fi
+
+                    if [ -z "$available" ] || [ "$available" -lt "$desired" ]; then
+                      echo "ERROR: ${service} has ${available:-0}/${desired} available replicas"
+                      exit 1
+                    fi
+
+                    echo "OK: ${service} -> ${actual}, available ${available}/${desired}"
+                  done
                 '''
             }
             post {
