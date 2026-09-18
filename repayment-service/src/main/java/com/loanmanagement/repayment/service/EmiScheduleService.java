@@ -2,6 +2,7 @@ package com.loanmanagement.repayment.service;
 
 import com.loanmanagement.repayment.entity.EmiSchedule;
 import com.loanmanagement.repayment.repository.EmiScheduleRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed EMI repository bean.")
 public class EmiScheduleService {
 
     private final EmiScheduleRepository emiScheduleRepository;
