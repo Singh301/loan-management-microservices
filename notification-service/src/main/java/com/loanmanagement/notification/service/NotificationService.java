@@ -21,19 +21,13 @@ public class NotificationService {
         if (eventId == null || eventId.isBlank()) {
             throw new IllegalArgumentException("Event ID is required");
         }
-        if (repository.existsByEventId(eventId)) {
+        int inserted = repository.insertIfAbsent(
+                eventId, customerId, loanId, title, message, type);
+        if (inserted == 0) {
             log.info("Ignoring duplicate notification event {}", eventId);
             return null;
         }
-        Notification n = Notification.builder()
-                .eventId(eventId)
-                .customerId(customerId)
-                .loanId(loanId)
-                .title(title)
-                .message(message)
-                .type(type)
-                .build();
-        return repository.saveAndFlush(n);
+        return repository.findByEventId(eventId).orElse(null);
     }
 
     @Transactional(readOnly = true)
