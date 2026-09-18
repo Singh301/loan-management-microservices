@@ -54,6 +54,18 @@ pipeline {
                 sh '''
                   set -e
                   kubectl apply -f k8s/namespace.yaml
+
+                  echo "Validating required Kubernetes Secret: loan-management-secrets"
+                  kubectl -n loan-management get secret loan-management-secrets >/dev/null
+
+                  for key in DB_USERNAME DB_PASSWORD JWT_SECRET; do
+                    if ! kubectl -n loan-management get secret loan-management-secrets \
+                      -o "jsonpath={.data.${key}}" | grep -q .; then
+                      echo "ERROR: Required secret key ${key} is missing or empty."
+                      exit 1
+                    fi
+                  done
+
                   kubectl apply -f k8s/configmap.yaml
                   kubectl apply -f k8s/services.yaml
                   kubectl apply -f k8s/loan-services.yaml
