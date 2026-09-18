@@ -53,6 +53,7 @@ spec:
     metadata:
       labels: { app: mysql }
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
         - name: mysql
           image: mysql:8.0
@@ -71,6 +72,12 @@ spec:
             - name: mysql-init
               mountPath: /docker-entrypoint-initdb.d/init.sql
               subPath: init.sql
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 24
           readinessProbe:
             exec:
               command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
@@ -116,10 +123,16 @@ spec:
     metadata:
       labels: { app: redis }
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
         - name: redis
           image: redis:7-alpine
           ports: [{ containerPort: 6379 }]
+          startupProbe:
+            exec: { command: ["redis-cli", "ping"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
           readinessProbe:
             exec: { command: ["redis-cli", "ping"] }
             initialDelaySeconds: 5
@@ -156,10 +169,27 @@ spec:
     metadata:
       labels: { app: zookeeper }
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
         - name: zookeeper
           image: confluentinc/cp-zookeeper:7.6.0
           ports: [{ containerPort: 2181 }]
+          startupProbe:
+            tcpSocket:
+              port: 2181
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            tcpSocket:
+              port: 2181
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: 2181
+            periodSeconds: 20
+            failureThreshold: 3
           env:
             - { name: ZOOKEEPER_CLIENT_PORT, value: "2181" }
             - { name: ZOOKEEPER_TICK_TIME, value: "2000" }
@@ -192,6 +222,7 @@ spec:
     metadata:
       labels: { app: kafka }
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:7.6.0
@@ -204,6 +235,12 @@ spec:
             - { name: KAFKA_INTER_BROKER_LISTENER_NAME, value: PLAINTEXT }
             - { name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, value: "1" }
             - { name: KAFKA_AUTO_CREATE_TOPICS_ENABLE, value: "true" }
+          startupProbe:
+            tcpSocket:
+              port: 29092
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 24
           readinessProbe:
             tcpSocket: { port: 29092 }
             initialDelaySeconds: 30
