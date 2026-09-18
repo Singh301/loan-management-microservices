@@ -7,6 +7,7 @@ import com.loanmanagement.repayment.entity.EmiSchedule;
 import com.loanmanagement.repayment.entity.Repayment;
 import com.loanmanagement.repayment.repository.EmiScheduleRepository;
 import com.loanmanagement.repayment.repository.RepaymentRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed repayment repository beans.")
 public class RepaymentService {
 
     private final RepaymentRepository repaymentRepository;
