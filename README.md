@@ -195,6 +195,8 @@ On AWS, prefer workload IAM credentials (for example EKS pod identity/IRSA) rath
 
 Local filesystem storage is not shared across replicas and should not be used for production document durability.
 
+The least-privilege S3 permissions template is in `deploy/aws/document-service-s3-policy.json`. Production should bind those permissions to the document-service workload identity and keep the bucket private.
+
 ## Production hardening included
 
 - JWT validation and role-based authorization
@@ -208,6 +210,12 @@ Local filesystem storage is not shared across replicas and should not be used fo
 - Correlation ID propagation with bounded request IDs and MDC cleanup
 - Standardized API error responses with correlation IDs; unexpected server errors are logged internally without exposing stack traces
 - Refresh-token hashing at rest and scheduled cleanup
+- Atomic Kafka event idempotency for audit, notifications and EMI schedule generation
+- Outbox processing lease, bounded retries, and backlog metrics
+- Prometheus alert rules for service availability, HTTP 5xx rate, Hikari saturation and outbox backlog
+- Jenkins Trivy image vulnerability scanning before registry push
+- Container/image build reproducibility through pinned runtime digests
+- KYC identifier masking in customer API responses
 - JWT secret strength validation (minimum 32-byte secret)
 - Testcontainers-based database migration regression coverage
 - Concurrency-safe disbursement idempotency ledger
@@ -225,3 +233,7 @@ Local filesystem storage is not shared across replicas and should not be used fo
 No real credentials or production secrets belong in Git. Use environment variables, Kubernetes Secrets, Jenkins credentials, or a cloud secret manager for deployment secrets.
 
 This repository is a portfolio/learning project demonstrating production microservice patterns; infrastructure such as managed databases, Kafka clusters, object storage, ingress, TLS, IAM and cloud networking must be configured in the target environment.
+
+## Observability alerts
+
+Prometheus loads `prometheus/alerts/loan-management.yml`. The rules cover service availability, HTTP 5xx rate, Hikari connection-pool saturation, and loan outbox backlog/failed events. In production, connect Prometheus to an Alertmanager or managed alerting service for notification delivery.
