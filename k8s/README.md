@@ -73,6 +73,10 @@ Servlet-based services use the shared `RequestIdFilter` to place `X-Request-Id` 
 
 The services use Micrometer Tracing with an OpenTelemetry bridge and W3C trace-context propagation. Trace sampling defaults to 10%. OTLP export is disabled by default to keep local development self-contained; enable it by setting `OTEL_TRACING_EXPORT_ENABLED=true` and providing `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` for an OpenTelemetry Collector or compatible backend.
 
+### Redis and Kafka resilience
+
+Redis-backed services use bounded connection and command timeouts. Kafka producers use `acks=all` and idempotence, while consumers disable auto-commit and use bounded polling/session settings. Notification and audit consumers send failed records to `<topic>.DLT` after three retries; repayment uses its existing retryable-topic flow with exponential backoff and a DLT handler. Kafka observations are enabled where producers/consumers are present so messaging spans can participate in distributed tracing.
+
 ## AWS target architecture
 
 For AWS, replace local infrastructure with managed services where appropriate:
