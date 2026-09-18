@@ -19,6 +19,7 @@ import com.loanmanagement.common.security.TokenHash;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -143,6 +144,15 @@ public class AuthService {
                 rt.setRevoked(true);
                 refreshTokenRepository.save(rt);
             });
+        }
+    }
+
+    @Scheduled(cron = "${REFRESH_TOKEN_CLEANUP_CRON:0 0 3 * * *}")
+    @Transactional
+    public void cleanupExpiredRefreshTokens() {
+        int deleted = refreshTokenRepository.deleteByExpiryDateBefore(LocalDateTime.now());
+        if (deleted > 0) {
+            log.info("Deleted {} expired refresh tokens", deleted);
         }
     }
 
