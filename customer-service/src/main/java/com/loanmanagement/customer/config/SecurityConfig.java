@@ -64,9 +64,6 @@ public class SecurityConfig {
 
     @Component
     @RequiredArgsConstructor
-    @SuppressFBWarnings(
-            value = "EI_EXPOSE_REP2",
-            justification = "Spring dependency injection intentionally retains the managed JWT token provider.")
     public static class JwtFilter extends OncePerRequestFilter {
         private final JwtTokenProvider jwt;
 
