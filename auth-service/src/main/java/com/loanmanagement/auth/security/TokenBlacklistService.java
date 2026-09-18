@@ -36,7 +36,7 @@ public class TokenBlacklistService {
         }
 
         return Boolean.TRUE.equals(
-                redisTemplate.hasKey(BLACKLIST_PREFIX + token)
+                redisTemplate.hasKey(BLACKLIST_PREFIX + TokenHash.sha256(token))
         );
     }
 }
