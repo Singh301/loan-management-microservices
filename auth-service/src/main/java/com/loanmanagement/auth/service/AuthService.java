@@ -1,6 +1,7 @@
 package com.loanmanagement.auth.service;
 
 import com.loanmanagement.auth.dto.CreateUserRequest;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.loanmanagement.auth.dto.LoginRequest;
 import com.loanmanagement.auth.dto.LoginResponse;
 import com.loanmanagement.auth.dto.RefreshTokenRequest;
@@ -31,6 +32,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains managed service, repository, and configuration references.")
 public class AuthService {
 
     private static final int MAX_FAILED_ATTEMPTS = 5;
