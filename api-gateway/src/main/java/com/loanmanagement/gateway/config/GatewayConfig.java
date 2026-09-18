@@ -6,7 +6,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 @Configuration
 public class GatewayConfig {
@@ -38,10 +42,14 @@ public class GatewayConfig {
         };
     }
 
-    private String clientIp(org.springframework.web.server.ServerWebExchange exchange) {
-        if (exchange.getRequest().getRemoteAddress() != null
-                && exchange.getRequest().getRemoteAddress().getAddress() != null) {
-            return exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+    private String clientIp(ServerWebExchange exchange) {
+        SocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
+        if (remoteAddress instanceof InetSocketAddress inetSocketAddress) {
+            if (inetSocketAddress.getAddress() != null) {
+                return inetSocketAddress.getAddress().getHostAddress();
+            }
+            String hostString = inetSocketAddress.getHostString();
+            return StringUtils.hasText(hostString) ? hostString : "unknown";
         }
         return "unknown";
     }
