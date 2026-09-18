@@ -42,7 +42,7 @@ public class SecurityConfig {
                         .contentTypeOptions(contentType -> {})
                         .frameOptions(frame -> frame.deny())
                         .referrerPolicy(referrer -> referrer
-                                .policy(org.springframework.security.config.httpheaders.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                                .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
                         .permissionsPolicy(policy -> policy
                                 .policy("camera=(), microphone=(), geolocation=()")))
                 .authorizeHttpRequests(auth -> auth
