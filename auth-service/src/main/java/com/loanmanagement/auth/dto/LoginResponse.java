@@ -1,6 +1,7 @@
 package com.loanmanagement.auth.dto;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -21,6 +22,7 @@ public class LoginResponse {
     private List<String> roles = List.of();
     private long expiresIn;
 
+    @Builder
     public LoginResponse(
             String accessToken,
             String refreshToken,
