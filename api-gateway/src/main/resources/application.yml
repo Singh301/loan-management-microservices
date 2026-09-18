@@ -93,6 +93,10 @@ management:
       application: ${spring.application.name}
 
 logging:
+  structured:
+    format:
+      console: ecs
+
   level:
     org.springframework.cloud.gateway: INFO
     reactor.netty: INFO
