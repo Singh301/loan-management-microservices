@@ -41,11 +41,18 @@ public class SecurityConfig {
                         .contentTypeOptions(contentType -> {})
                         .frameOptions(frame -> frame.deny())
                         .referrerPolicy(referrer -> referrer
-                                .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                                .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
+                                        .ReferrerPolicy.NO_REFERRER))
                         .permissionsPolicy(policy -> policy
                                 .policy("camera=(), microphone=(), geolocation=()")))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health/**", "/actuator/prometheus").permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/actuator/health/**",
+                                "/actuator/prometheus")
+                        .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -66,7 +73,9 @@ public class SecurityConfig {
                     if (jwt.validateToken(token)) {
                         var auth = new UsernamePasswordAuthenticationToken(
                                 jwt.getUsername(token), null,
-                                jwt.getRoles(token).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+                                jwt.getRoles(token).stream()
+                                        .map(SimpleGrantedAuthority::new)
+                                        .collect(Collectors.toList()));
                         auth.setDetails(jwt.getUserId(token));
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     }
