@@ -9,7 +9,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,20 +35,26 @@ public class OutboxPublisher {
     }
 
     @Scheduled(fixedDelayString = "${outbox.publisher.delay-ms:2000}")
-    @Transactional
     public void publishPendingEvents() {
         LocalDateTime now = LocalDateTime.now();
         List<OutboxEvent> events = repository.findReady(
                 now, MAX_RETRIES, now.minusMinutes(PROCESSING_LEASE_MINUTES), PageRequest.of(0, BATCH_SIZE));
-        for (OutboxEvent event : events) publish(event);
+        for (OutboxEvent event : events) {
+            int claimed = repository.claimForProcessing(
+                    event.getId(),
+                    now,
+                    MAX_RETRIES,
+                    now.minusMinutes(PROCESSING_LEASE_MINUTES));
+            if (claimed == 1) {
+                publish(event);
+            }
+        }
     }
 
     private void publish(OutboxEvent event) {
         try {
             event.setStatus(OutboxEvent.Status.PROCESSING);
             event.setProcessingAt(LocalDateTime.now());
-            event.setNextRetryAt(null);
-            repository.save(event);
             JsonNode payload = objectMapper.readTree(event.getPayload());
             kafkaTemplate.send(TOPIC, event.getAggregateId(), payload).get(10, TimeUnit.SECONDS);
             event.setStatus(OutboxEvent.Status.PROCESSED);
