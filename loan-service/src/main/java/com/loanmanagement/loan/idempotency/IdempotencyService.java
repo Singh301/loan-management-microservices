@@ -3,6 +3,7 @@ package com.loanmanagement.loan.idempotency;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loanmanagement.common.exception.DomainException;
 import com.loanmanagement.loan.dto.LoanResponseDto;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,9 @@ import java.util.HexFormat;
 
 @Service
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains managed repository and ObjectMapper beans.")
 public class IdempotencyService {
     public static final String APPLY_OPERATION = "LOAN_APPLY";
     public static final String DISBURSE_OPERATION = "LOAN_DISBURSE";
