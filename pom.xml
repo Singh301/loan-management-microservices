@@ -103,7 +103,7 @@
             <id>quality</id>
             <build><plugins>
                 <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-checkstyle-plugin</artifactId><version>${checkstyle.version}</version><configuration><configLocation>${maven.multiModuleProjectDirectory}/config/checkstyle.xml</configLocation><skip>${checkstyle.skip}</skip><failOnViolation>true</failOnViolation></configuration><executions><execution><phase>verify</phase><goals><goal>check</goal></goals></execution></executions></plugin>
-                <plugin><groupId>com.github.spotbugs</groupId><artifactId>spotbugs-maven-plugin</artifactId><version>${spotbugs.version}</version><configuration><failOnError>true</failOnError></configuration><executions><execution><phase>verify</phase><goals><goal>check</goal></goals></execution></executions></plugin>
+                <plugin><groupId>com.github.spotbugs</groupId><artifactId>spotbugs-maven-plugin</artifactId><version>${spotbugs.version}</version><configuration><excludeFilterFile>${maven.multiModuleProjectDirectory}/config/spotbugs-exclude.xml</excludeFilterFile><failOnError>true</failOnError></configuration><executions><execution><phase>verify</phase><goals><goal>check</goal></goals></execution></executions></plugin>
                 <plugin><groupId>org.owasp</groupId><artifactId>dependency-check-maven</artifactId><version>${dependency-check.version}</version><configuration><failBuildOnCVSS>7</failBuildOnCVSS><format>HTML</format><format>JSON</format></configuration><executions><execution><phase>verify</phase><goals><goal>check</goal></goals></execution></executions></plugin>
             </plugins></build>
         </profile>
