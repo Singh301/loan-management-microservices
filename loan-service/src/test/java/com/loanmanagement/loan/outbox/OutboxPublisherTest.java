@@ -45,6 +45,8 @@ class OutboxPublisherTest {
 
         when(repository.findReady(any(LocalDateTime.class), eq(8), any(LocalDateTime.class), any(PageRequest.class)))
                 .thenReturn(List.of(event));
+        when(repository.claimForProcessing(
+                eq(1L), any(LocalDateTime.class), eq(8), any(LocalDateTime.class))).thenReturn(1);
         when(objectMapper.readTree("{}")).thenReturn(payload);
         when(kafkaTemplate.send("loan.events", "42", payload))
                 .thenReturn(CompletableFuture.completedFuture(null));
@@ -72,6 +74,8 @@ class OutboxPublisherTest {
 
         when(repository.findReady(any(LocalDateTime.class), eq(8), any(LocalDateTime.class), any(PageRequest.class)))
                 .thenReturn(List.of(event));
+        when(repository.claimForProcessing(
+                eq(2L), any(LocalDateTime.class), eq(8), any(LocalDateTime.class))).thenReturn(1);
         when(objectMapper.readTree("{}")).thenReturn(payload);
         when(kafkaTemplate.send("loan.events", "42", payload))
                 .thenReturn(CompletableFuture.failedFuture(new IllegalStateException("broker unavailable")));
