@@ -12,6 +12,7 @@ import com.loanmanagement.loan.entity.Loan;
 import com.loanmanagement.loan.entity.LoanStatus;
 import com.loanmanagement.loan.outbox.OutboxService;
 import com.loanmanagement.loan.repository.LoanRepository;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains managed loan service beans.")
 public class LoanDisbursementService {
 
     private final LoanRepository loanRepository;
@@ -37,10 +41,13 @@ public class LoanDisbursementService {
         String key = (idempotencyKey != null && !idempotencyKey.isBlank())
                 ? idempotencyKey.trim()
                 : UUID.randomUUID().toString();
-        boolean clientProvidedIdempotencyKey = idempotencyKey != null && !idempotencyKey.isBlank();
+        boolean clientProvidedIdempotencyKey =
+                idempotencyKey != null && !idempotencyKey.isBlank();
 
         if (clientProvidedIdempotencyKey && (key.length() < 8 || key.length() > 100)) {
-            throw new DomainException("Idempotency-Key must contain between 8 and 100 characters", HttpStatus.BAD_REQUEST);
+            throw new DomainException(
+                    "Idempotency-Key must contain between 8 and 100 characters",
+                    HttpStatus.BAD_REQUEST);
         }
 
         // Keep the legacy loan-column lookup for records created before the shared idempotency ledger.
