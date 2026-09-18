@@ -67,6 +67,8 @@ An HPA requires a Kubernetes resource-metrics provider. The low-memory k3s EC2 p
 
 Application metrics are exposed by Spring Boot Actuator/Prometheus on the services that configure the `prometheus` endpoint. Use a monitoring stack such as Prometheus/Grafana or an equivalent managed platform in the target environment.
 
+Servlet-based services use the shared `RequestIdFilter` to place `X-Request-Id` into the SLF4J MDC as `requestId` and return the same identifier in the response. This allows structured logs to be correlated across service boundaries. The API Gateway already propagates `X-Request-Id` on routed requests.
+
 ## AWS target architecture
 
 For AWS, replace local infrastructure with managed services where appropriate:
