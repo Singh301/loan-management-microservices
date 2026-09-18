@@ -21,6 +21,15 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: auth-service
       terminationGracePeriodSeconds: 30
       containers:
         - name: auth-service
@@ -83,6 +92,15 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: customer-service
       terminationGracePeriodSeconds: 30
       containers:
         - name: customer-service
@@ -145,6 +163,15 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: document-service
       terminationGracePeriodSeconds: 30
       containers:
         - name: document-service
@@ -209,6 +236,15 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: notification-service
       terminationGracePeriodSeconds: 30
       containers:
         - name: notification-service
@@ -271,6 +307,15 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: audit-service
       terminationGracePeriodSeconds: 30
       containers:
         - name: audit-service
@@ -333,6 +378,15 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: dashboard-service
       terminationGracePeriodSeconds: 30
       containers:
         - name: dashboard-service
