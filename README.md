@@ -176,6 +176,25 @@ Required Jenkins setup:
 9. Notification and audit events through Kafka
 10. Document upload with validation
 
+## Document storage
+
+The document service supports two storage backends:
+
+- `local` (default): suitable for local Docker development and tests.
+- `s3`: durable object storage for production Kubernetes deployments.
+
+To enable S3, configure:
+- `DOCUMENT_STORAGE_TYPE=s3`
+- `DOCUMENT_S3_BUCKET=<bucket>`
+- `DOCUMENT_S3_REGION=<region>`
+- optional `DOCUMENT_S3_KEY_PREFIX`
+- optional `DOCUMENT_S3_ENDPOINT` for S3-compatible development services
+- optional `DOCUMENT_S3_PATH_STYLE_ACCESS=true` for S3-compatible endpoints
+
+On AWS, prefer workload IAM credentials (for example EKS pod identity/IRSA) rather than static access keys. The application uses the AWS SDK default credentials provider chain.
+
+Local filesystem storage is not shared across replicas and should not be used for production document durability.
+
 ## Production hardening included
 
 - JWT validation and role-based authorization
