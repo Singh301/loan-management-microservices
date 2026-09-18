@@ -5,6 +5,7 @@ import com.loanmanagement.auth.dto.LoginResponse;
 import com.loanmanagement.auth.dto.RefreshTokenRequest;
 import com.loanmanagement.auth.service.AuthService;
 import com.loanmanagement.common.dto.ApiResponse;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Login, Refresh, Logout")
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed authentication service.")
 public class AuthController {
 
     private final AuthService authService;
