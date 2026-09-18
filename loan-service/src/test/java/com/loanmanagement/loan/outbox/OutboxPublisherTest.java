@@ -77,7 +77,7 @@ class OutboxPublisherTest {
 
     @Test
     void shouldStopRetryingAfterMaxRetries() {
-        OutboxPublisher publisher = new OutboxPublisher(repository, kafkaTemplate, objectMapper);
+        OutboxPublisher publisher = new OutboxPublisher(repository, kafkaTemplate, objectMapper, meterRegistry);
 
         OutboxEvent event = OutboxEvent.builder()
                 .id(2L)
