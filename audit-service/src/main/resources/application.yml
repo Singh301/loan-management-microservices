@@ -1,7 +1,10 @@
 server:
+  shutdown: graceful
   port: 8087
 
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
   application:
     name: audit-service
   datasource:
