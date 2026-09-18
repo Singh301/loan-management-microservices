@@ -36,7 +36,9 @@ public class LocalDocumentStorage implements DocumentStorage {
             throw new IOException("Invalid local storage path");
         }
 
-        Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        try (var inputStream = file.getInputStream()) {
+            Files.copy(inputStream, target, StandardCopyOption.REPLACE_EXISTING);
+        }
         return storedName;
     }
 
