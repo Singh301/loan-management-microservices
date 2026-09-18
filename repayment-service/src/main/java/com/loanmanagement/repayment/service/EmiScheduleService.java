@@ -1,11 +1,9 @@
 package com.loanmanagement.repayment.service;
 
-import com.loanmanagement.common.exception.DomainException;
 import com.loanmanagement.repayment.entity.EmiSchedule;
 import com.loanmanagement.repayment.repository.EmiScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
