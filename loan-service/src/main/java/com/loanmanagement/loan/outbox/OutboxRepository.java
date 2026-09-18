@@ -14,14 +14,14 @@ public interface OutboxRepository extends JpaRepository<OutboxEvent, Long> {
     @Query("""
             select e from OutboxEvent e
             where
-                (e.status = com.loanmanagement.loan.outbox.OutboxEvent$Status.PENDING
+                (e.status = 'PENDING'
                     and (e.nextRetryAt is null or e.nextRetryAt <= :now))
                 or
-                (e.status = com.loanmanagement.loan.outbox.OutboxEvent$Status.FAILED
+                (e.status = 'FAILED'
                     and e.retryCount < :maxRetries
                     and (e.nextRetryAt is null or e.nextRetryAt <= :now))
                 or
-                (e.status = com.loanmanagement.loan.outbox.OutboxEvent$Status.PROCESSING
+                (e.status = 'PROCESSING'
                     and e.processingAt is not null
                     and e.processingAt <= :staleBefore)
             order by e.createdAt asc
