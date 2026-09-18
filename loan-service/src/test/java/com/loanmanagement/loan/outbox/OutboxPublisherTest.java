@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.core.KafkaTemplate;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,10 +30,12 @@ class OutboxPublisherTest {
     private ObjectMapper objectMapper;
     @Mock
     private JsonNode payload;
+    @Mock
+    private MeterRegistry meterRegistry;
 
     @Test
     void shouldMarkEventProcessedAfterSuccessfulPublish() throws Exception {
-        OutboxPublisher publisher = new OutboxPublisher(repository, kafkaTemplate, objectMapper);
+        OutboxPublisher publisher = new OutboxPublisher(repository, kafkaTemplate, objectMapper, meterRegistry);
 
         OutboxEvent event = OutboxEvent.builder()
                 .id(1L)
@@ -69,7 +72,7 @@ class OutboxPublisherTest {
         assertEquals(OutboxEvent.Status.PROCESSED, event.getStatus());
         assertNull(event.getProcessingAt());
         assertNull(event.getLastError());
-        verify(repository, atLeast(2)).save(event);
+        verify(repository).save(event);
     }
 
     @Test
@@ -85,7 +88,14 @@ class OutboxPublisherTest {
                 .status(OutboxEvent.Status.FAILED)
                 .build();
 
-        when(repository.findReady(any(LocalDateTime.class), eq(8), any(LocalDateTime.class), any(PageRequest.class)))
+        when(repository.findReady(
+                any(LocalDateTime.class),
+                eq(8),
+                any(LocalDateTime.class),
+                eq(OutboxEvent.Status.PENDING),
+                eq(OutboxEvent.Status.FAILED),
+                eq(OutboxEvent.Status.PROCESSING),
+                any(PageRequest.class)))
                 .thenReturn(List.of(event));
         when(repository.claimForProcessing(
                 eq(2L),
