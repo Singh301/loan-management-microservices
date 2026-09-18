@@ -57,6 +57,23 @@ pipeline {
             }
         }
 
+        stage('Validate Kubernetes Manifests') {
+            when { branch 'master' }
+            steps {
+                sh '''
+                  set -e
+                  kubectl apply --dry-run=server -f k8s/namespace.yaml
+                  kubectl apply --dry-run=server -f k8s/configmap.yaml
+                  kubectl apply --dry-run=server -f k8s/network-policies.yaml
+                  kubectl apply --dry-run=server -f k8s/services.yaml
+                  kubectl apply --dry-run=server -f k8s/loan-services.yaml
+                  kubectl apply --dry-run=server -f k8s/support-services.yaml
+                  kubectl apply --dry-run=server -f k8s/dev-infrastructure.yaml
+                  echo "Kubernetes manifest validation passed."
+                '''
+            }
+        }
+
         stage('Deploy Kubernetes') {
             when { branch 'master' }
             steps {
