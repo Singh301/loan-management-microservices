@@ -3,8 +3,7 @@
     <!--
       JPA entity association: RefreshToken.user is an intentional managed
       entity reference used for persistence and lazy loading. SpotBugs reports
-      the same exposure through Lombok-generated getter, setter, constructor,
-      and builder methods.
+      the same exposure through Lombok-generated accessors and constructor.
     -->
     <Match>
         <Class name="com.loanmanagement.auth.entity.RefreshToken"/>
@@ -12,5 +11,16 @@
             <Bug pattern="EI_EXPOSE_REP"/>
             <Bug pattern="EI_EXPOSE_REP2"/>
         </Or>
+    </Match>
+
+    <!--
+      Lombok generates RefreshToken$RefreshTokenBuilder as a nested class.
+      Match it explicitly because SpotBugs reports the builder method against
+      the generated nested class rather than the enclosing entity class.
+    -->
+    <Match>
+        <Class name="com.loanmanagement.auth.entity.RefreshToken$RefreshTokenBuilder"/>
+        <Method name="user"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
 </FindBugsFilter>
