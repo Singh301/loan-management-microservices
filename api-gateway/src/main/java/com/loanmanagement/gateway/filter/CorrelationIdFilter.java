@@ -14,10 +14,13 @@ import java.util.UUID;
 @Component
 public class CorrelationIdFilter implements GlobalFilter, Ordered {
 
+    private static final int MAX_REQUEST_ID_LENGTH = 100;
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String correlationId = exchange.getRequest().getHeaders().getFirst(ApiConstants.HEADER_CORRELATION_ID);
-        if (correlationId == null || correlationId.isBlank()) {
+        if (correlationId == null || correlationId.isBlank()
+                || correlationId.length() > MAX_REQUEST_ID_LENGTH) {
             correlationId = UUID.randomUUID().toString();
         }
 
