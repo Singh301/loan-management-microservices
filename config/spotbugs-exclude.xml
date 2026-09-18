@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!--
+      JPA entity association: RefreshToken.user is an intentional managed
+      entity reference used for persistence and lazy loading. SpotBugs reports
+      the same exposure through Lombok-generated getter, setter, constructor,
+      and builder methods.
+    -->
+    <Match>
+        <Class name="com.loanmanagement.auth.entity.RefreshToken"/>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+</FindBugsFilter>
