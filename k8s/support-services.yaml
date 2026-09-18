@@ -15,6 +15,9 @@ spec:
         - name: auth-service
           image: ghcr.io/singh301/auth-service:latest
           ports: [{ containerPort: 8081 }]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
@@ -58,6 +61,9 @@ spec:
         - name: customer-service
           image: ghcr.io/singh301/customer-service:latest
           ports: [{ containerPort: 8082 }]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
@@ -104,6 +110,9 @@ spec:
           env:
             - name: UPLOAD_DIR
               value: /app/uploads
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
@@ -147,6 +156,9 @@ spec:
         - name: notification-service
           image: ghcr.io/singh301/notification-service:latest
           ports: [{ containerPort: 8086 }]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
@@ -190,6 +202,9 @@ spec:
         - name: audit-service
           image: ghcr.io/singh301/audit-service:latest
           ports: [{ containerPort: 8087 }]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
@@ -233,6 +248,9 @@ spec:
         - name: dashboard-service
           image: ghcr.io/singh301/dashboard-service:latest
           ports: [{ containerPort: 8088 }]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
