@@ -27,6 +27,7 @@ public class OutboxEvent {
     @Column(name = "last_error", length = 1000) private String lastError;
     @Column(name = "created_at", updatable = false) @Builder.Default private LocalDateTime createdAt = LocalDateTime.now();
     @Column(name = "processed_at") private LocalDateTime processedAt;
+    @Column(name = "processing_at") private LocalDateTime processingAt;
 
     public enum Status { PENDING, PROCESSING, PROCESSED, FAILED }
 }
