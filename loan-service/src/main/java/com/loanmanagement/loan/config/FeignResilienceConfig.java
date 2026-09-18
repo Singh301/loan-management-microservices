@@ -2,7 +2,6 @@ package com.loanmanagement.loan.config;
 
 import com.loanmanagement.common.constants.ApiConstants;
 import feign.RequestInterceptor;
-import feign.RequestTemplate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -18,7 +17,8 @@ public class FeignResilienceConfig {
     @Bean
     public RequestInterceptor authorizationForwardingInterceptor() {
         return template -> {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes == null) {
                 return;
             }
