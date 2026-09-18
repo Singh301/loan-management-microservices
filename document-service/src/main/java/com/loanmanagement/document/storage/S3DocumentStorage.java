@@ -34,7 +34,7 @@ public class S3DocumentStorage implements DocumentStorage {
 
     @Override
     public String store(MultipartFile file, String safeOriginalName) throws IOException {
-        String key = keyPrefix + java.util.UUID.randomUUID() + "_" + safeOriginalName;
+        String key = keyPrefix + java.util.UUID.randomUUID() + extension(safeOriginalName);
 
         try (InputStream inputStream = file.getInputStream()) {
             PutObjectRequest request = PutObjectRequest.builder()
@@ -49,6 +49,17 @@ public class S3DocumentStorage implements DocumentStorage {
         } catch (RuntimeException ex) {
             throw new IOException("Failed to store document in S3", ex);
         }
+    }
+
+    private String extension(String safeOriginalName) {
+        int dot = safeOriginalName.lastIndexOf('.');
+        if (dot < 0 || dot == safeOriginalName.length() - 1) {
+            return "";
+        }
+        String extension = safeOriginalName.substring(dot).toLowerCase(java.util.Locale.ROOT);
+        return extension.length() <= 10 && extension.matches("\\.[a-z0-9]+")
+                ? extension
+                : "";
     }
 
     @Override
