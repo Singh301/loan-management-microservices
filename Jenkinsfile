@@ -20,7 +20,7 @@ pipeline {
         }
 
         stage('Build & Unit Test') {
-            steps { sh 'mvn -B clean verify -DskipTests=false' }
+            steps { sh 'mvn -B clean verify -Pintegration-tests -DskipTests=false' }
         }
 
         stage('Quality & Security') {
@@ -237,7 +237,7 @@ pipeline {
 
     post {
         always {
-            junit testResults: '**/target/surefire-reports/*.xml', allowEmptyResults: true
+            junit testResults: '**/target/surefire-reports/*.xml,**/target/failsafe-reports/*.xml', allowEmptyResults: true
             archiveArtifacts artifacts: '**/target/*.jar', allowEmptyArchive: true
             archiveArtifacts artifacts: '**/target/dependency-check-report.html', allowEmptyArchive: true
             archiveArtifacts artifacts: '**/target/dependency-check-report.json', allowEmptyArchive: true
