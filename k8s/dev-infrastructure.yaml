@@ -66,6 +66,16 @@ spec:
                   key: DB_PASSWORD
             - name: MYSQL_DATABASE
               value: loan_db
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: loan-management-secrets
+                  key: DB_USERNAME
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: loan-management-secrets
+                  key: DB_PASSWORD
           volumeMounts:
             - name: mysql-data
               mountPath: /var/lib/mysql
