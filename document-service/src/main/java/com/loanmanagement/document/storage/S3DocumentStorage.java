@@ -18,6 +18,9 @@ import java.io.InputStream;
 
 @Component
 @ConditionalOnProperty(name = "document.storage.type", havingValue = "s3")
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed AWS S3 client bean.")
 public class S3DocumentStorage implements DocumentStorage {
 
     private final S3Client s3Client;
