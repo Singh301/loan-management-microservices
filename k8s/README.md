@@ -49,7 +49,7 @@ kubectl -n loan-management get hpa
 kubectl -n loan-management rollout status deployment/loan-service
 ```
 
-The API gateway is exposed through a Kubernetes `LoadBalancer` service.
+The API gateway is a `ClusterIP` service by default. Keep application services internal and add an ingress/load-balancer layer explicitly for environments that require external access.
 
 ## AWS target architecture
 
