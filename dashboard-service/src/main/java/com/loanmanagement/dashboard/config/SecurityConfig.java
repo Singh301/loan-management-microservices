@@ -1,6 +1,7 @@
 package com.loanmanagement.dashboard.config;
 
 import com.loanmanagement.common.security.JwtTokenProvider;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +30,9 @@ import java.util.stream.Collectors;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed JWT filter bean.")
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
 
