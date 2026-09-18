@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: document-service
+  namespace: loan-management
+spec:
+  template:
+    spec:
+      serviceAccountName: document-service-aws
+      automountServiceAccountToken: true
+      containers:
+        - name: document-service
+          env:
+            - name: DOCUMENT_STORAGE_TYPE
+              value: s3
