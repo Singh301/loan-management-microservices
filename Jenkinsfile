@@ -59,12 +59,24 @@ pipeline {
                   kubectl -n loan-management get secret loan-management-secrets >/dev/null
 
                   for key in DB_USERNAME DB_PASSWORD JWT_SECRET; do
-                    if ! kubectl -n loan-management get secret loan-management-secrets \
-                      -o "jsonpath={.data.${key}}" | grep -q .; then
+                    encoded=$(kubectl -n loan-management get secret loan-management-secrets \
+                      -o "jsonpath={.data.${key}}" 2>/dev/null || true)
+
+                    if [ -z "$encoded" ]; then
                       echo "ERROR: Required secret key ${key} is missing or empty."
                       exit 1
                     fi
+
+                    value=$(printf '%s' "$encoded" | base64 -d 2>/dev/null || true)
+                    case "$value" in
+                      ""|"change-me"|"change-me-with-a-long-random-value")
+                        echo "ERROR: Secret key ${key} contains a placeholder value."
+                        exit 1
+                        ;;
+                    esac
                   done
+
+                  unset encoded value
 
                   kubectl apply -f k8s/configmap.yaml
                   kubectl apply -f k8s/network-policies.yaml
