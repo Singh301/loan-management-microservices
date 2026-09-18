@@ -29,6 +29,21 @@ pipeline {
             }
         }
 
+        stage('Source Secret Scan') {
+            steps {
+                sh '''
+                  set -e
+                  docker run --rm \
+                    -v "$WORKSPACE:/scan" \
+                    aquasec/trivy:0.70.0 fs \
+                    --scanners secret \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 1 \
+                    /scan
+                '''
+            }
+        }
+
         stage('Build Images') {
             steps {
                 sh '''
