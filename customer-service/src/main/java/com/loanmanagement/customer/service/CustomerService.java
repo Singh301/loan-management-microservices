@@ -51,8 +51,41 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    public CustomerResponseDto getByIdForUser(Long id, Long userId) {
+        return customerRepository.findByIdAndUserId(id, userId)
+                .map(CustomerResponseDto::from)
+                .orElseThrow(() -> new DomainException(
+                        "Customer access denied", HttpStatus.FORBIDDEN, "CUSTOMER_OWNERSHIP_DENIED"));
+    }
+
+    @Transactional(readOnly = true)
+    public CustomerResponseDto getByUserId(Long userId) {
+        return customerRepository.findByUserId(userId)
+                .map(CustomerResponseDto::from)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer for user", userId));
+    }
+
+    @Transactional(readOnly = true)
     public Page<CustomerResponseDto> getAll(Pageable pageable) {
         return customerRepository.findAll(pageable).map(CustomerResponseDto::from);
+    }
+
+    @Transactional
+    public CustomerResponseDto updateForUser(Long id, CustomerRequestDto request, Long userId) {
+        Customer customer = customerRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new DomainException(
+                        "Customer access denied", HttpStatus.FORBIDDEN, "CUSTOMER_OWNERSHIP_DENIED"));
+
+        customer.setFullName(request.getFullName());
+        customer.setPhone(request.getPhone());
+        customer.setDateOfBirth(request.getDateOfBirth());
+        customer.setAddress(request.getAddress());
+        customer.setCity(request.getCity());
+        customer.setState(request.getState());
+        customer.setPincode(request.getPincode());
+        if (request.getPanNumber() != null) customer.setPanNumber(request.getPanNumber());
+        if (request.getAadhaarNumber() != null) customer.setAadhaarNumber(request.getAadhaarNumber());
+        return CustomerResponseDto.from(customerRepository.save(customer));
     }
 
     @Transactional
