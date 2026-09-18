@@ -9,6 +9,14 @@ spring:
     default-timeout: ${DB_TRANSACTION_TIMEOUT:30s}
   application:
     name: loan-service
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: ${FEIGN_CONNECT_TIMEOUT_MS:2000}
+            readTimeout: ${FEIGN_READ_TIMEOUT_MS:3000}
+            loggerLevel: ${FEIGN_LOG_LEVEL:none}
   datasource:
     hikari:
       minimum-idle: ${DB_MIN_IDLE:1}
