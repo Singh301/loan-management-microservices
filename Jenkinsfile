@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        timeout(time: 30, unit: 'MINUTES')
+    }
     environment {
         REGISTRY = 'ghcr.io/singh301'
         IMAGE_TAG = "v${BUILD_NUMBER}"
@@ -92,6 +97,20 @@ pipeline {
                     kubectl -n loan-management rollout status deployment/${service} --timeout=180s
                   done
                 '''
+            }
+            post {
+                failure {
+                    sh '''
+                      set +e
+                      echo "Kubernetes deployment failed. Rolling back deployments..."
+                      for service in discovery-server api-gateway auth-service customer-service loan-service repayment-service document-service notification-service audit-service dashboard-service; do
+                        kubectl -n loan-management rollout undo deployment/${service} || true
+                      done
+                      for service in discovery-server api-gateway auth-service customer-service loan-service repayment-service document-service notification-service audit-service dashboard-service; do
+                        kubectl -n loan-management rollout status deployment/${service} --timeout=120s || true
+                      done
+                    '''
+                }
             }
         }
 
