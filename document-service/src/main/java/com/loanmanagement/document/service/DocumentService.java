@@ -39,6 +39,9 @@ public class DocumentService {
     @Transactional
     public Document upload(MultipartFile file, Long loanId, Long customerId,
                            String documentType, String uploadedBy) {
+        if (file == null) {
+            throw new DomainException("File is empty", HttpStatus.BAD_REQUEST);
+        }
         validate(file);
 
         String original = file.getOriginalFilename();
