@@ -67,6 +67,7 @@ public class SecurityConfig {
                         var authentication = new UsernamePasswordAuthenticationToken(
                                 jwt.getUsername(token), null,
                                 jwt.getRoles(token).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+                        authentication.setDetails(jwt.getUserId(token));
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                     }
                 }
