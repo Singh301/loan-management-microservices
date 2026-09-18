@@ -95,7 +95,7 @@ Useful local endpoints:
 
 ## Maven verification
 
-Normal build and tests:
+Normal local build and unit tests (does not require Docker):
 
 ```bash
 mvn -B clean verify
@@ -107,7 +107,13 @@ Quality/security profile:
 mvn -B verify -Pquality
 ```
 
-The quality profile includes Checkstyle, SpotBugs and OWASP Dependency-Check. The loan service also contains a Testcontainers MySQL integration test.
+Docker-backed integration tests use Testcontainers and are isolated behind the `integration-tests` Maven profile:
+
+```bash
+mvn -B clean verify -Pintegration-tests -DskipTests=false
+```
+
+Run the integration profile only on an environment with a working Docker daemon. CI and Jenkins run the integration profile automatically. The quality profile includes Checkstyle, SpotBugs and OWASP Dependency-Check.
 
 ## Kubernetes
 
