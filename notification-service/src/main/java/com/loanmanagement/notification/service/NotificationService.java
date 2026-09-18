@@ -42,4 +42,12 @@ public class NotificationService {
             repository.save(n);
         });
     }
+
+    @Transactional
+    public void markReadForCustomer(Long id, Long customerId) {
+        repository.findByIdAndCustomerId(id, customerId).ifPresent(n -> {
+            n.setRead(true);
+            repository.save(n);
+        });
+    }
 }
