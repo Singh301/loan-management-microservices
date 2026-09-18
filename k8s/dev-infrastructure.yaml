@@ -1,4 +1,4 @@
-# DEVELOPMENT ONLY: these stateful components use emptyDir and are not production storage.
+# DEVELOPMENT ONLY: these stateful components use local Kubernetes storage and are not production managed services.
 # Production AWS deployments should use RDS, ElastiCache and MSK instead.
 apiVersion: v1
 kind: ConfigMap
@@ -15,6 +15,18 @@ data:
     CREATE DATABASE IF NOT EXISTS notification_db;
     CREATE DATABASE IF NOT EXISTS audit_db;
     CREATE DATABASE IF NOT EXISTS dashboard_db;
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  namespace: loan-management
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
 ---
 apiVersion: v1
 kind: Service
@@ -73,7 +85,8 @@ spec:
             limits: { cpu: "1", memory: 1Gi }
       volumes:
         - name: mysql-data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: mysql-data
         - name: mysql-init
           configMap:
             name: mysql-init
