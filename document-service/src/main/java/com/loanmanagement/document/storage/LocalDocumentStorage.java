@@ -30,7 +30,7 @@ public class LocalDocumentStorage implements DocumentStorage {
     public String store(MultipartFile file, String safeOriginalName) throws IOException {
         Files.createDirectories(baseDirectory);
 
-        String storedName = UUID.randomUUID() + "_" + safeOriginalName;
+        String storedName = UUID.randomUUID() + extension(safeOriginalName);
         Path target = baseDirectory.resolve(storedName).normalize();
         if (!target.getParent().equals(baseDirectory)) {
             throw new IOException("Invalid local storage path");
@@ -38,6 +38,17 @@ public class LocalDocumentStorage implements DocumentStorage {
 
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
         return storedName;
+    }
+
+    private String extension(String safeOriginalName) {
+        int dot = safeOriginalName.lastIndexOf('.');
+        if (dot < 0 || dot == safeOriginalName.length() - 1) {
+            return "";
+        }
+        String extension = safeOriginalName.substring(dot).toLowerCase(java.util.Locale.ROOT);
+        return extension.length() <= 10 && extension.matches("\\.[a-z0-9]+")
+                ? extension
+                : "";
     }
 
     @Override
