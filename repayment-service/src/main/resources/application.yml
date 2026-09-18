@@ -31,7 +31,10 @@ spring:
     baseline-on-migrate: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    template:
+      observation-enabled: true
     consumer:
+      observation-enabled: true
       group-id: repayment-service
       auto-offset-reset: earliest
       enable-auto-commit: false
