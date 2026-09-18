@@ -67,6 +67,7 @@ pipeline {
                   done
 
                   kubectl apply -f k8s/configmap.yaml
+                  kubectl apply -f k8s/network-policies.yaml
                   kubectl apply -f k8s/services.yaml
                   kubectl apply -f k8s/loan-services.yaml
                   kubectl apply -f k8s/support-services.yaml
