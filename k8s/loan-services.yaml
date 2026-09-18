@@ -15,6 +15,9 @@ spec:
         - name: discovery-server
           image: ghcr.io/singh301/discovery-server:latest
           ports: [{ containerPort: 8761 }]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           startupProbe:
             httpGet:
               path: /actuator/health
@@ -55,6 +58,9 @@ spec:
         - name: api-gateway
           image: ghcr.io/singh301/api-gateway:latest
           ports: [{ containerPort: 8080 }]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
@@ -98,6 +104,9 @@ spec:
         - name: loan-service
           image: ghcr.io/singh301/loan-service:latest
           ports: [{ containerPort: 8083 }]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
@@ -141,6 +150,9 @@ spec:
         - name: repayment-service
           image: ghcr.io/singh301/repayment-service:latest
           ports: [{ containerPort: 8084 }]
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=65.0 -XX:InitialRAMPercentage=20.0 -XX:+ExitOnOutOfMemoryError"
           envFrom:
             - configMapRef: { name: loan-management-config }
             - secretRef: { name: loan-management-secrets }
