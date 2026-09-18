@@ -212,7 +212,7 @@ services:
     networks: [lms-net]
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: ghcr.io/kafbat/kafka-ui:v1.5.0
     container_name: lms-kafka-ui
     ports: ["8090:8080"]
     environment:
@@ -223,7 +223,7 @@ services:
     networks: [lms-net]
 
   zipkin:
-    image: openzipkin/zipkin:latest
+    image: openzipkin/zipkin:3.6.1
     container_name: lms-zipkin
     ports: ["9411:9411"]
     networks: [lms-net]
