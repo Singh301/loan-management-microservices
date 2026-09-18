@@ -1,6 +1,7 @@
 package com.loanmanagement.auth.config;
 
 import com.loanmanagement.auth.security.JwtAuthenticationFilter;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,9 @@ import org.springframework.http.HttpStatus;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed authentication filter.")
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
