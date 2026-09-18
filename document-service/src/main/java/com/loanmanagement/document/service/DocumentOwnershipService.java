@@ -36,10 +36,11 @@ public class DocumentOwnershipService {
         }
     }
 
-    public void validateUploadOwnership(Long loanId, Long customerId, Authentication authentication) {
+    public Long resolveUploadCustomerId(
+            Long loanId, Long customerId, Authentication authentication) {
         Long currentCustomerId = currentCustomerId(authentication);
         if (currentCustomerId == null) {
-            return;
+            return customerId;
         }
 
         if (customerId != null && !currentCustomerId.equals(customerId)) {
@@ -48,7 +49,14 @@ public class DocumentOwnershipService {
 
         if (loanId != null) {
             validateLoanAccess(loanId);
+        } else if (customerId == null) {
+            throw new DomainException(
+                    "Customer uploads must be associated with a loan or customer",
+                    HttpStatus.BAD_REQUEST,
+                    "DOCUMENT_OWNER_REQUIRED");
         }
+
+        return currentCustomerId;
     }
 
     public void validateLoanAccess(Long loanId, Authentication authentication) {
