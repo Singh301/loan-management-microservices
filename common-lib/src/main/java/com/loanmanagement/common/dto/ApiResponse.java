@@ -19,6 +19,7 @@ public class ApiResponse<T> {
     private T data;
     private Instant timestamp;
     private String correlationId;
+    private String errorCode;
 
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
