@@ -1,8 +1,12 @@
 # Loan Management System – Production-Oriented Microservices
 
+> **Status: PROJECT COMPLETE** — the agreed portfolio/interview scope is implemented in this repository.
+
 Conversion of the original loan-management monolith into a production-oriented microservices architecture.
 
 ## Architecture
+
+Detailed diagram: docs/architecture.md
 
 ```text
 API Gateway :8080
@@ -243,3 +247,32 @@ This repository is a portfolio/learning project demonstrating production microse
 ## Observability alerts
 
 Prometheus loads `prometheus/alerts/loan-management.yml`. The rules cover service availability, HTTP 5xx rate, Hikari connection-pool saturation, and loan outbox backlog/failed events. In production, connect Prometheus to an Alertmanager or managed alerting service for notification delivery.
+
+## Project Completion Checklist
+
+- [x] Spring Boot microservices
+- [x] API Gateway + Eureka
+- [x] JWT authentication and RBAC
+- [x] MySQL + Flyway
+- [x] Redis
+- [x] Kafka + transactional outbox
+- [x] Idempotency and locking for critical operations
+- [x] Resilience4j resilience patterns
+- [x] Notifications and audit events
+- [x] Actuator + Prometheus + Grafana + tracing
+- [x] Docker Compose
+- [x] Non-root, pinned runtime images
+- [x] Kubernetes deployments with probes/resources/autoscaling
+- [x] Kubernetes network policies
+- [x] Jenkins CI/CD
+- [x] GitHub Actions CI
+- [x] Unit/integration testing with Testcontainers
+- [x] Checkstyle, SpotBugs and OWASP dependency scanning
+- [x] End-to-end deployment smoke test in Jenkins
+- [x] Architecture documentation
+
+### Definition of done
+
+The project is considered **complete for portfolio/interview use** at this point.
+
+Further production topics such as multi-region infrastructure, service mesh, Helm, Terraform, managed Kafka/database platforms and advanced secret-management systems are intentionally outside the scope of this project. They can be discussed as future production evolution rather than added to the codebase.
