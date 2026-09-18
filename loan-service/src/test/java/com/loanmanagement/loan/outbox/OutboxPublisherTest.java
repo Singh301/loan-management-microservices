@@ -115,6 +115,6 @@ class OutboxPublisherTest {
         assertEquals(OutboxEvent.Status.FAILED, event.getStatus());
         assertNull(event.getNextRetryAt());
         assertNull(event.getProcessingAt());
-        verify(repository, atLeast(2)).save(event);
+        verify(repository).save(event);
     }
 }
