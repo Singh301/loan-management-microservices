@@ -3,6 +3,7 @@ package com.loanmanagement.loan.controller;
 import com.loanmanagement.common.dto.ApiResponse;
 import com.loanmanagement.loan.dto.CollateralDto;
 import com.loanmanagement.loan.service.CollateralService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,9 @@ import java.util.List;
 @RequestMapping("/api/v1/collaterals")
 @RequiredArgsConstructor
 @Tag(name = "Collaterals")
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed collateral service.")
 public class CollateralController {
 
     private final CollateralService collateralService;
