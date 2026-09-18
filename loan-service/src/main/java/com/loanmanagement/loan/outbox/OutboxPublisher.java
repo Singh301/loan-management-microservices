@@ -2,6 +2,7 @@ package com.loanmanagement.loan.outbox;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,9 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains managed infrastructure beans.")
 public class OutboxPublisher {
     private static final String TOPIC = "loan.events";
     private static final int BATCH_SIZE = 50;
