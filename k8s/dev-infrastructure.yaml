@@ -22,6 +22,7 @@ metadata:
   name: mysql-data
   namespace: loan-management
 spec:
+  storageClassName: local-path
   accessModes:
     - ReadWriteOnce
   resources:
