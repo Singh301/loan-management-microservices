@@ -86,8 +86,12 @@ public class CustomerService {
         customer.setCity(request.getCity());
         customer.setState(request.getState());
         customer.setPincode(request.getPincode());
-        if (request.getPanNumber() != null) customer.setPanNumber(request.getPanNumber());
-        if (request.getAadhaarNumber() != null) customer.setAadhaarNumber(request.getAadhaarNumber());
+        if (request.getPanNumber() != null) {
+            customer.setPanNumber(request.getPanNumber());
+        }
+        if (request.getAadhaarNumber() != null) {
+            customer.setAadhaarNumber(request.getAadhaarNumber());
+        }
         return CustomerResponseDto.from(customerRepository.save(customer));
     }
 
@@ -101,8 +105,12 @@ public class CustomerService {
         customer.setCity(request.getCity());
         customer.setState(request.getState());
         customer.setPincode(request.getPincode());
-        if (request.getPanNumber() != null) customer.setPanNumber(request.getPanNumber());
-        if (request.getAadhaarNumber() != null) customer.setAadhaarNumber(request.getAadhaarNumber());
+        if (request.getPanNumber() != null) {
+            customer.setPanNumber(request.getPanNumber());
+        }
+        if (request.getAadhaarNumber() != null) {
+            customer.setAadhaarNumber(request.getAadhaarNumber());
+        }
         return CustomerResponseDto.from(customerRepository.save(customer));
     }
 
