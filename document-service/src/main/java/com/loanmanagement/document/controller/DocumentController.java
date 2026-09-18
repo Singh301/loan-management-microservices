@@ -2,6 +2,7 @@ package com.loanmanagement.document.controller;
 
 import com.loanmanagement.common.dto.ApiResponse;
 import com.loanmanagement.document.entity.Document;
+import com.loanmanagement.document.service.DocumentOwnershipService;
 import com.loanmanagement.document.service.DocumentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +26,7 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final DocumentOwnershipService documentOwnershipService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
@@ -35,15 +37,19 @@ public class DocumentController {
             @RequestParam(required = false) Long customerId,
             @RequestParam String documentType,
             Authentication authentication) {
-        Document doc = documentService.upload(file, loanId, customerId, documentType,
+        Long effectiveCustomerId = documentOwnershipService.resolveUploadCustomerId(
+                loanId, customerId, authentication);
+        Document doc = documentService.upload(file, loanId, effectiveCustomerId, documentType,
                 authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Uploaded", doc));
     }
 
     @GetMapping("/{id}/download")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<Resource> download(@PathVariable Long id) {
+    public ResponseEntity<Resource> download(
+            @PathVariable Long id, Authentication authentication) {
         Document meta = documentService.getMeta(id);
+        documentOwnershipService.validateDocumentAccess(meta, authentication);
         Resource resource = documentService.download(id);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(meta.getContentType()))
@@ -54,7 +60,9 @@ public class DocumentController {
 
     @GetMapping("/loan/{loanId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MANAGER', 'ADMIN')")
-    public ResponseEntity<ApiResponse<List<Document>>> byLoan(@PathVariable Long loanId) {
+    public ResponseEntity<ApiResponse<List<Document>>> byLoan(
+            @PathVariable Long loanId, Authentication authentication) {
+        documentOwnershipService.validateLoanAccess(loanId, authentication);
         return ResponseEntity.ok(ApiResponse.success(documentService.byLoan(loanId)));
     }
 
