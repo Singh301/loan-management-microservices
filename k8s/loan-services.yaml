@@ -15,14 +15,25 @@ spec:
         - name: discovery-server
           image: ghcr.io/singh301/discovery-server:latest
           ports: [{ containerPort: 8761 }]
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 18
           readinessProbe:
-            httpGet: { path: /actuator/health/readiness, port: 8761 }
-            initialDelaySeconds: 20
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8761
             periodSeconds: 10
+            failureThreshold: 3
           livenessProbe:
-            httpGet: { path: /actuator/health/liveness, port: 8761 }
-            initialDelaySeconds: 30
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8761
             periodSeconds: 15
+            failureThreshold: 3
           resources:
             requests: { cpu: 100m, memory: 256Mi }
             limits: { cpu: 500m, memory: 512Mi }
