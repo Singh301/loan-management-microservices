@@ -1,0 +1,37 @@
+# Source control and CI metadata
+.git
+.gitignore
+.github
+.gitattributes
+
+# IDE and local development files
+.idea
+.vscode
+*.iml
+.DS_Store
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Kubernetes manifests are deployed separately
+k8s
+
+# Documentation
+*.md
+!README.md
+
+# Maven build leftovers that are not needed by Docker
+**/target/*.original
+**/target/surefire-reports
+**/target/site
+**/target/test-classes
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# OS/editor temp files
+Thumbs.db
