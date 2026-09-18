@@ -34,11 +34,17 @@ The Jenkins pipeline does not create or print secret values. Before deployment i
 
 ## 3. Deploy
 
+Apply network policies before application workloads:
+
 ```bash
 kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/network-policies.yaml
 kubectl apply -f k8s/services.yaml
 kubectl apply -f k8s/loan-services.yaml
+kubectl apply -f k8s/support-services.yaml
 ```
+
+The network policy baseline denies all ingress and egress in the application namespace, then allows same-namespace traffic and DNS lookups. Add narrowly scoped policies when external dependencies or ingress controllers are introduced.
 
 ## 4. Verify
 
