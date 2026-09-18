@@ -14,7 +14,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: discovery-server
-          image: ghcr.io/singh301/discovery-server:latest
+          image: ghcr.io/singh301/discovery-server:1.0.0
           ports: [{ containerPort: 8761 }]
           env:
             - name: JAVA_TOOL_OPTIONS
@@ -58,7 +58,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: api-gateway
-          image: ghcr.io/singh301/api-gateway:latest
+          image: ghcr.io/singh301/api-gateway:1.0.0
           ports: [{ containerPort: 8080 }]
           env:
             - name: JAVA_TOOL_OPTIONS
@@ -105,7 +105,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: loan-service
-          image: ghcr.io/singh301/loan-service:latest
+          image: ghcr.io/singh301/loan-service:1.0.0
           ports: [{ containerPort: 8083 }]
           env:
             - name: JAVA_TOOL_OPTIONS
@@ -152,7 +152,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: repayment-service
-          image: ghcr.io/singh301/repayment-service:latest
+          image: ghcr.io/singh301/repayment-service:1.0.0
           ports: [{ containerPort: 8084 }]
           env:
             - name: JAVA_TOOL_OPTIONS
