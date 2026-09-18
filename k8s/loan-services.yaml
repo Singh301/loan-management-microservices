@@ -4,6 +4,12 @@ metadata:
   name: discovery-server
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 1
   selector:
     matchLabels: { app: discovery-server }
@@ -48,6 +54,12 @@ metadata:
   name: api-gateway
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 2
   selector:
     matchLabels: { app: api-gateway }
@@ -95,6 +107,12 @@ metadata:
   name: loan-service
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 2
   selector:
     matchLabels: { app: loan-service }
@@ -142,6 +160,12 @@ metadata:
   name: repayment-service
   namespace: loan-management
 spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 10
   replicas: 2
   selector:
     matchLabels: { app: repayment-service }
@@ -225,3 +249,39 @@ spec:
       resource:
         name: cpu
         target: { type: Utilization, averageUtilization: 70 }
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway
+  namespace: loan-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: loan-service
+  namespace: loan-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: loan-service
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: repayment-service
+  namespace: loan-management
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: repayment-service
