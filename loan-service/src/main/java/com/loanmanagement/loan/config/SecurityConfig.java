@@ -48,7 +48,7 @@ public class SecurityConfig {
                         .referrerPolicy(referrer -> referrer
                                 .policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
                                         .ReferrerPolicy.NO_REFERRER))
-                        .permissionsPolicy(policy -> policy
+                        .permissionsPolicyHeader(policy -> policy
                                 .policy("camera=(), microphone=(), geolocation=()")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
