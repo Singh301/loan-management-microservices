@@ -5,6 +5,7 @@ import com.loanmanagement.auth.dto.UpdateUserRequest;
 import com.loanmanagement.auth.dto.UserResponse;
 import com.loanmanagement.auth.service.AuthService;
 import com.loanmanagement.common.dto.ApiResponse;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,6 +22,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Users", description = "Administrative user management")
 @PreAuthorize("hasRole('ADMIN')")
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed authentication service.")
 public class UserController {
 
     private final AuthService authService;
