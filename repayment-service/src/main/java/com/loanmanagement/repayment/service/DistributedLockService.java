@@ -1,5 +1,6 @@
 package com.loanmanagement.repayment.service;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.CannotAcquireLockException;
@@ -12,6 +13,9 @@ import java.util.function.Supplier;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Spring dependency injection intentionally retains the managed JdbcTemplate bean.")
 public class DistributedLockService {
 
     private final JdbcTemplate jdbcTemplate;
