@@ -25,7 +25,9 @@ class LocalDocumentStorageTest {
         String key = storage.store(file, "statement.pdf");
 
         assertTrue(Files.exists(tempDir.resolve(key)));
-        assertArrayEquals(content, storage.load(key).getInputStream().readAllBytes());
+        try (var inputStream = storage.load(key).getInputStream()) {
+            assertArrayEquals(content, inputStream.readAllBytes());
+        }
 
         storage.delete(key);
         assertTrue(Files.notExists(tempDir.resolve(key)));
