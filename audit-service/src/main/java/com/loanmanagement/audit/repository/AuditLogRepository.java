@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository;
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     Page<AuditLog> findByAggregateId(String aggregateId, Pageable pageable);
     Page<AuditLog> findByEventType(String eventType, Pageable pageable);
+    boolean existsByEventId(String eventId);
 }
