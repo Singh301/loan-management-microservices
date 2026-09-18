@@ -23,24 +23,14 @@ public class AuditService {
             throw new IllegalArgumentException("Audit eventId is required");
         }
 
-        if (repository.existsByEventId(event.getEventId())) {
-            return;
-        }
-
         try {
-            AuditLog log = AuditLog.builder()
-                    .eventId(event.getEventId())
-                    .eventType(event.getEventType())
-                    .aggregateId(event.getAggregateId())
-                    .aggregateType(event.getAggregateType())
-                    .payload(objectMapper.writeValueAsString(event.getPayload()))
-                    .build();
-            repository.saveAndFlush(log);
-        } catch (org.springframework.dao.DataIntegrityViolationException duplicate) {
-            // Another consumer instance may have inserted the same event concurrently.
-            if (!repository.existsByEventId(event.getEventId())) {
-                throw new RuntimeException("Failed to write audit log", duplicate);
-            }
+            String payload = objectMapper.writeValueAsString(event.getPayload());
+            repository.insertIfAbsent(
+                    event.getEventId(),
+                    event.getEventType(),
+                    event.getAggregateId(),
+                    event.getAggregateType(),
+                    payload);
         } catch (Exception e) {
             throw new RuntimeException("Failed to write audit log", e);
         }
