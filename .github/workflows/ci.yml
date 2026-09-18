@@ -28,4 +28,4 @@ jobs:
           cache: maven
 
       - name: Build, test, and quality gates
-        run: mvn -B clean verify -Pquality -DskipTests=false
+        run: mvn -B clean verify -Pquality,integration-tests -DskipTests=false
