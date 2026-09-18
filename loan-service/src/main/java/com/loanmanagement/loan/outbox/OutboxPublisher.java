@@ -3,6 +3,7 @@ package com.loanmanagement.loan.outbox;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -25,6 +26,14 @@ public class OutboxPublisher {
     private final OutboxRepository repository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
+
+    @jakarta.annotation.PostConstruct
+    void registerMetrics() {
+        meterRegistry.gauge("loan_outbox_pending_events", this, publisher -> repository.countByStatus(OutboxEvent.Status.PENDING));
+        meterRegistry.gauge("loan_outbox_failed_events", this, publisher -> repository.countByStatus(OutboxEvent.Status.FAILED));
+        meterRegistry.gauge("loan_outbox_processing_events", this, publisher -> repository.countByStatus(OutboxEvent.Status.PROCESSING));
+    }
 
     @Scheduled(fixedDelayString = "${outbox.publisher.delay-ms:2000}")
     @Transactional
