@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,15 +28,30 @@ public class CustomerController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     @Operation(summary = "Create customer")
-    public ResponseEntity<ApiResponse<CustomerResponseDto>> create(@Valid @RequestBody CustomerRequestDto request) {
+    public ResponseEntity<ApiResponse<CustomerResponseDto>> create(
+            @Valid @RequestBody CustomerRequestDto request, Authentication authentication) {
+        if (hasRole(authentication, "CUSTOMER")) {
+            request.setUserId(currentUserId(authentication));
+        }
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Customer created", customerService.create(request)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
-    public ResponseEntity<ApiResponse<CustomerResponseDto>> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(customerService.getById(id)));
+    public ResponseEntity<ApiResponse<CustomerResponseDto>> getById(
+            @PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(
+                hasRole(authentication, "CUSTOMER")
+                        ? customerService.getByIdForUser(id, currentUserId(authentication))
+                        : customerService.getById(id)));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<CustomerResponseDto>> me(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(
+                customerService.getByUserId(currentUserId(authentication))));
     }
 
     @GetMapping
@@ -57,8 +73,26 @@ public class CustomerController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     public ResponseEntity<ApiResponse<CustomerResponseDto>> update(
-            @PathVariable Long id, @Valid @RequestBody CustomerRequestDto request) {
-        return ResponseEntity.ok(ApiResponse.success("Updated", customerService.update(id, request)));
+            @PathVariable Long id,
+            @Valid @RequestBody CustomerRequestDto request,
+            Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Updated",
+                hasRole(authentication, "CUSTOMER")
+                        ? customerService.updateForUser(id, request, currentUserId(authentication))
+                        : customerService.update(id, request)));
+    }
+
+    private boolean hasRole(Authentication authentication, String role) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
+    }
+
+    private Long currentUserId(Authentication authentication) {
+        if (authentication == null || !(authentication.getDetails() instanceof Number number)) {
+            throw new IllegalStateException("Unable to resolve userId from token");
+        }
+        return number.longValue();
     }
 
     @DeleteMapping("/{id}")
