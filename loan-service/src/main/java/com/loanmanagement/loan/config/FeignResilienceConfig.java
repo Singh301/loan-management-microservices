@@ -1,5 +1,6 @@
 package com.loanmanagement.loan.config;
 
+import com.loanmanagement.common.constants.ApiConstants;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,9 +27,9 @@ public class FeignResilienceConfig {
             if (StringUtils.hasText(authorization)) {
                 template.header("Authorization", authorization);
             }
-            String correlationId = request.getHeader("X-Correlation-Id");
-            if (StringUtils.hasText(correlationId)) {
-                template.header("X-Correlation-Id", correlationId);
+            String requestId = request.getHeader(ApiConstants.HEADER_CORRELATION_ID);
+            if (StringUtils.hasText(requestId)) {
+                template.header(ApiConstants.HEADER_CORRELATION_ID, requestId);
             }
         };
     }
