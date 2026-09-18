@@ -59,6 +59,14 @@ kubectl -n loan-management rollout status deployment/loan-service
 
 The API gateway is a `ClusterIP` service by default. Keep application services internal and add an ingress/load-balancer layer explicitly for environments that require external access.
 
+### Autoscaling and metrics
+
+The loan service HPA scales on CPU and memory. The API gateway HPA scales on CPU and memory. Both use conservative scale-up and scale-down behavior to reduce oscillation.
+
+An HPA requires a Kubernetes resource-metrics provider. The low-memory k3s EC2 profile used for development disables `metrics-server` to reduce RAM usage, so HPA metrics are intentionally unavailable there. A normal shared or production cluster should enable a supported metrics provider before relying on these HPAs.
+
+Application metrics are exposed by Spring Boot Actuator/Prometheus on the services that configure the `prometheus` endpoint. Use a monitoring stack such as Prometheus/Grafana or an equivalent managed platform in the target environment.
+
 ## AWS target architecture
 
 For AWS, replace local infrastructure with managed services where appropriate:
