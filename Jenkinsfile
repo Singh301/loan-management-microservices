@@ -44,7 +44,7 @@ pipeline {
             steps {
                 sh '''
                   set -e
-                  mkdir -p trivy-reports .trivy-cache
+                  mkdir -p trivy-reports /tmp/lms-trivy-cache
 
                   for service in discovery-server api-gateway auth-service customer-service loan-service repayment-service document-service notification-service audit-service dashboard-service; do
                     image="${REGISTRY}/${service}:${IMAGE_TAG}"
@@ -52,16 +52,14 @@ pipeline {
 
                     docker run --rm \
                       -v /var/run/docker.sock:/var/run/docker.sock \
-                      -v "$WORKSPACE/.trivy-cache:/root/.cache/trivy" \
-                      -v "$WORKSPACE:/work" \
+                      -v /tmp/lms-trivy-cache:/root/.cache/trivy \
                       aquasec/trivy:0.70.0 image \
                       --scanners vuln \
                       --ignore-unfixed \
                       --severity HIGH,CRITICAL \
                       --exit-code 1 \
                       --format json \
-                      --output "/work/${report}" \
-                      "$image"
+                      "$image" > "$report"
 
                     echo "Container security scan passed for ${image}"
                   done
