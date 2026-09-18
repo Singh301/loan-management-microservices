@@ -158,9 +158,37 @@ pipeline {
         stage('Smoke Test') {
             when { branch 'master' }
             steps {
-                sh 'kubectl -n loan-management get deployments -o wide'
-                sh 'kubectl -n loan-management get pods -o wide'
-                sh 'kubectl -n loan-management get svc'
+                sh '''
+                  set -e
+
+                  kubectl -n loan-management get deployments -o wide
+                  kubectl -n loan-management get pods -o wide
+                  kubectl -n loan-management get svc
+
+                  echo "Starting temporary API Gateway port-forward..."
+                  kubectl -n loan-management port-forward svc/api-gateway 18080:80 >/tmp/loan-gateway-port-forward.log 2>&1 &
+                  PF_PID=$!
+                  trap 'kill "$PF_PID" >/dev/null 2>&1 || true' EXIT
+
+                  ready=false
+                  for i in $(seq 1 30); do
+                    if curl --silent --show-error --fail --max-time 5 http://127.0.0.1:18080/actuator/health >/tmp/loan-gateway-health.json; then
+                      ready=true
+                      break
+                    fi
+                    sleep 2
+                  done
+
+                  if [ "$ready" != "true" ]; then
+                    echo "ERROR: API Gateway smoke test failed."
+                    cat /tmp/loan-gateway-port-forward.log || true
+                    exit 1
+                  fi
+
+                  grep -q '"status":"UP"' /tmp/loan-gateway-health.json
+                  echo "API Gateway smoke test passed."
+                  cat /tmp/loan-gateway-health.json
+                '''
             }
         }
     }
