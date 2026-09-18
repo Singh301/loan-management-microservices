@@ -14,7 +14,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: auth-service
-          image: ghcr.io/singh301/auth-service:latest
+          image: ghcr.io/singh301/auth-service:1.0.0
           ports: [{ containerPort: 8081 }]
           env:
             - name: JAVA_TOOL_OPTIONS
@@ -61,7 +61,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: customer-service
-          image: ghcr.io/singh301/customer-service:latest
+          image: ghcr.io/singh301/customer-service:1.0.0
           ports: [{ containerPort: 8082 }]
           env:
             - name: JAVA_TOOL_OPTIONS
@@ -108,7 +108,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: document-service
-          image: ghcr.io/singh301/document-service:latest
+          image: ghcr.io/singh301/document-service:1.0.0
           ports: [{ containerPort: 8085 }]
           env:
             - name: UPLOAD_DIR
@@ -157,7 +157,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: notification-service
-          image: ghcr.io/singh301/notification-service:latest
+          image: ghcr.io/singh301/notification-service:1.0.0
           ports: [{ containerPort: 8086 }]
           env:
             - name: JAVA_TOOL_OPTIONS
@@ -204,7 +204,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: audit-service
-          image: ghcr.io/singh301/audit-service:latest
+          image: ghcr.io/singh301/audit-service:1.0.0
           ports: [{ containerPort: 8087 }]
           env:
             - name: JAVA_TOOL_OPTIONS
@@ -251,7 +251,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: dashboard-service
-          image: ghcr.io/singh301/dashboard-service:latest
+          image: ghcr.io/singh301/dashboard-service:1.0.0
           ports: [{ containerPort: 8088 }]
           env:
             - name: JAVA_TOOL_OPTIONS
