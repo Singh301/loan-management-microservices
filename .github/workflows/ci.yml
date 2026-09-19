@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -77,6 +78,7 @@ jobs:
 
           for service in "${services[@]}"; do
             echo "Building and pushing ${service}:1.0.0"
+
             docker build \
               -t "ghcr.io/singh301/${service}:1.0.0" \
               -f "${service}/Dockerfile" \
