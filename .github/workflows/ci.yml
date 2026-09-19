@@ -36,7 +36,6 @@ jobs:
       contents: read
       packages: write
     runs-on: ubuntu-latest
-    needs: build-test
 
     steps:
       - name: Checkout
