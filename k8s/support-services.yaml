@@ -10,7 +10,7 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   minReadySeconds: 10
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: auth-service }
   template:
@@ -66,7 +66,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 100m, memory: 256Mi }
+            requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 768Mi }
 ---
 apiVersion: apps/v1
@@ -81,7 +81,7 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   minReadySeconds: 10
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: customer-service }
   template:
@@ -137,7 +137,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 100m, memory: 256Mi }
+            requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 768Mi }
 ---
 apiVersion: apps/v1
@@ -152,7 +152,7 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   minReadySeconds: 10
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: document-service }
   template:
@@ -211,7 +211,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 100m, memory: 256Mi }
+            requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 768Mi }
 ---
 apiVersion: apps/v1
@@ -226,7 +226,7 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   minReadySeconds: 10
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: notification-service }
   template:
@@ -282,7 +282,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 100m, memory: 256Mi }
+            requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 768Mi }
 ---
 apiVersion: apps/v1
@@ -297,7 +297,7 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   minReadySeconds: 10
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: audit-service }
   template:
@@ -353,7 +353,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 100m, memory: 256Mi }
+            requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 768Mi }
 ---
 apiVersion: apps/v1
@@ -368,7 +368,7 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   minReadySeconds: 10
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: dashboard-service }
   template:
@@ -424,7 +424,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 100m, memory: 256Mi }
+            requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 768Mi }
 
 ---
