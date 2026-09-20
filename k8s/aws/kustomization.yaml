@@ -13,6 +13,7 @@ resources:
   - document-service-serviceaccount.yaml
   - app-secret-provider.yaml
   - secret-sync.yaml
+  - secrets-serviceaccount.yaml
   - ingress.yaml
   - ../aws-s3-network-policy.yaml
 
