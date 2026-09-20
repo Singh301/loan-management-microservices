@@ -6,9 +6,11 @@ resources:
   - ../configmap.yaml
   - ../network-policies.yaml
   - ../services.yaml
+  - ../redis.yaml
   - ../loan-services.yaml
   - ../support-services.yaml
   - document-service-serviceaccount.yaml
+  - rds-secret-provider.yaml
   - ingress.yaml
   - ../aws-s3-network-policy.yaml
 
