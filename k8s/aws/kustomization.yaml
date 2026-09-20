@@ -7,10 +7,12 @@ resources:
   - ../network-policies.yaml
   - ../services.yaml
   - ../redis.yaml
+  - ../kafka.yaml
   - ../loan-services.yaml
   - ../support-services.yaml
   - document-service-serviceaccount.yaml
-  - rds-secret-provider.yaml
+  - app-secret-provider.yaml
+  - secret-sync.yaml
   - ingress.yaml
   - ../aws-s3-network-policy.yaml
 
