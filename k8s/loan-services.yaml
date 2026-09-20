@@ -54,7 +54,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 100m, memory: 256Mi }
+            requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 512Mi }
 ---
 apiVersion: apps/v1
@@ -69,7 +69,7 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   minReadySeconds: 10
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: api-gateway }
   template:
@@ -125,7 +125,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 100m, memory: 256Mi }
+            requests: { cpu: 100m, memory: 128Mi }
             limits: { cpu: 500m, memory: 768Mi }
 ---
 apiVersion: apps/v1
@@ -140,7 +140,7 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   minReadySeconds: 10
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: loan-service }
   template:
@@ -196,7 +196,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 200m, memory: 512Mi }
+            requests: { cpu: 100m, memory: 256Mi }
             limits: { cpu: "1", memory: 1Gi }
 ---
 apiVersion: apps/v1
@@ -211,7 +211,7 @@ spec:
       maxUnavailable: 0
       maxSurge: 1
   minReadySeconds: 10
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels: { app: repayment-service }
   template:
@@ -267,7 +267,7 @@ spec:
             periodSeconds: 15
             failureThreshold: 3
           resources:
-            requests: { cpu: 200m, memory: 512Mi }
+            requests: { cpu: 100m, memory: 256Mi }
             limits: { cpu: "1", memory: 1Gi }
 ---
 apiVersion: autoscaling/v2
@@ -280,8 +280,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: loan-service
-  minReplicas: 2
-  maxReplicas: 6
+  minReplicas: 1
+  maxReplicas: 3
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 60
@@ -320,8 +320,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: api-gateway
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 1
+  maxReplicas: 3
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 60
