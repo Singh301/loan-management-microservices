@@ -4,14 +4,16 @@ set -euo pipefail
 CLUSTER="loan-management-cluster"
 REGION="ap-south-1"
 NAMESPACE="loan-management"
+KUBECONFIG="${KUBECONFIG:-$HOME/.kube/eks-config}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+export KUBECONFIG
 
 echo "==> Updating kubeconfig"
-aws eks update-kubeconfig --region "$REGION" --name "$CLUSTER" >/dev/null
+mkdir -p "$(dirname "$KUBECONFIG")"
+aws eks update-kubeconfig --region "$REGION" --name "$CLUSTER" --kubeconfig "$KUBECONFIG" >/dev/null
 
 echo "==> Checking cluster"
 kubectl get nodes -o wide
-
 echo "==> Ensuring at least two worker nodes"
 MEDIUM_STATUS="$(aws eks describe-nodegroup --cluster-name "$CLUSTER" --nodegroup-name loan-management-workers-medium --region "$REGION" --query 'nodegroup.status' --output text 2>/dev/null || true)"
 if [[ "$MEDIUM_STATUS" == "ACTIVE" ]]; then
