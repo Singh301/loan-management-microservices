@@ -4,14 +4,13 @@ metadata:
   name: loan-management-config
   namespace: loan-management
 data:
-  # Replace these placeholders with managed AWS endpoints.
-  DB_HOST: REPLACE_WITH_RDS_ENDPOINT
+  DB_HOST: loan-management-mysql.chua64y0evu2.ap-south-1.rds.amazonaws.com
   DB_PORT: "3306"
-  DB_SSL: "true"
-  DB_ALLOW_PUBLIC_KEY_RETRIEVAL: "false"
-  REDIS_HOST: REPLACE_WITH_ELASTICACHE_ENDPOINT
+  DB_SSL: "false"
+  DB_ALLOW_PUBLIC_KEY_RETRIEVAL: "true"
+  REDIS_HOST: redis
   REDIS_PORT: "6379"
-  REDIS_SSL: "true"
+  REDIS_SSL: "false"
   KAFKA_BOOTSTRAP: REPLACE_WITH_MSK_BOOTSTRAP_SERVERS
   KAFKA_SECURITY_PROTOCOL: SASL_SSL
   KAFKA_SASL_MECHANISM: PLAIN
