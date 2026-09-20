@@ -1,57 +1,42 @@
-# AWS production overlay
+# AWS / EKS deployment
 
-This directory is the AWS-oriented overlay for the application workloads.
+This overlay is the fast, self-contained EKS deployment profile for the current project.
 
-It intentionally does not include k8s/dev-infrastructure.yaml. Production should use managed AWS services such as Amazon RDS, ElastiCache, MSK and S3.
+## What it uses
 
-## Prerequisites
+- Amazon EKS for compute
+- Amazon RDS MySQL for the database
+- AWS Secrets Manager + Secrets Store CSI Driver + EKS Pod Identity for application secrets
+- Redis and Kafka/ZooKeeper inside the EKS cluster for the initial working deployment
+- AWS Load Balancer Controller for the public ALB
+- GHCR for application images
 
-1. An Amazon EKS cluster with the AWS Load Balancer Controller installed.
-2. The EKS Pod Identity Agent installed on the cluster.
-3. An ACM certificate covering the production API hostname.
-4. Amazon RDS, ElastiCache and MSK endpoints.
-5. A private S3 bucket for documents.
-6. An IAM role for document-service-aws with the least-privilege S3 policy in deploy/aws/document-service-s3-policy.json.
+The repository does not contain passwords, JWT secrets, PATs, or other credentials.
 
-## Pod Identity
+## One-command deployment
 
-Create an IAM role using deploy/aws/document-service-pod-identity-trust-policy.json, attach the S3 policy from deploy/aws/document-service-s3-policy.json, and create an EKS Pod Identity association for:
+From the EC2 deployment host:
 
-- cluster: your EKS cluster
-- namespace: loan-management
-- service account: document-service-aws
-- IAM role: your document-service S3 role
+    cd ~/loan-management-microservices
+    git pull --ff-only origin master
+    bash deploy/aws/deploy-eks.sh
 
-EKS Pod Identity associations are created through the EKS API or CLI; the association itself is not represented as an IAM-role annotation in the Kubernetes ServiceAccount.
+The script updates kubeconfig, ensures worker capacity, deploys Redis/Kafka, creates the Secrets Manager sync workload, applies the AWS Kustomize overlay, waits for the core services, and prints the ALB hostname.
 
-## Secrets
+## Required AWS-side prerequisites
 
-The base application expects Kubernetes Secret keys such as DB_USERNAME, DB_PASSWORD, JWT_SECRET, and KAFKA_SASL_JAAS_CONFIG.
+These already need to exist before running the script:
 
-For production, source these values from AWS Secrets Manager rather than committing them to Git. AWS supports mounting Secrets Manager values into EKS pods through the AWS Secrets and Configuration Provider (ASCP) with the Secrets Store CSI Driver.
+1. EKS cluster: loan-management-cluster in ap-south-1.
+2. RDS endpoint and worker-to-RDS security-group access.
+3. AWS Load Balancer Controller.
+4. Secrets Store CSI Driver with AWS provider.
+5. EKS Pod Identity association for service account loan-management-secrets.
+6. AWS Secrets Manager secret loan-management-app-secrets.
+7. Kubernetes secret ghcr-secret for the private GHCR images.
 
-## ALB
+For this deployment profile, Kafka and Redis are provisioned by Kubernetes, so no MSK or ElastiCache endpoint is required.
 
-Replace these placeholders in ingress.yaml before applying:
+## Production follow-up
 
-- REPLACE_WITH_ACM_CERTIFICATE_ARN
-- REPLACE_WITH_API_HOSTNAME
-
-The ingress uses AWS Load Balancer Controller with an internet-facing ALB, HTTPS on port 443, and target-type: ip, which routes directly to pod IPs.
-
-## Configuration
-
-Edit configmap-patch.yaml and replace:
-
-- REPLACE_WITH_RDS_ENDPOINT
-- REPLACE_WITH_ELASTICACHE_ENDPOINT
-- REPLACE_WITH_MSK_BOOTSTRAP_SERVERS
-
-Then validate and apply:
-
-    kubectl kustomize k8s/aws
-    kubectl apply -k k8s/aws
-
-Do not apply the overlay until all REPLACE_WITH_* values have been replaced.
-
-The document-service deployment is switched to the s3 backend by document-service-patch.yaml.
+After the application is working end-to-end, Kafka can be moved to Amazon MSK, Redis to ElastiCache, document storage to S3, and the ALB can be switched to HTTPS with ACM. Those are hardening steps, not prerequisites for proving the application deployment path.
