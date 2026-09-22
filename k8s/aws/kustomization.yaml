@@ -12,6 +12,7 @@ resources:
 patches:
   - path: configmap-patch.yaml
   - path: document-service-patch.yaml
+  - path: security-context-patch.yaml
 
   - target:
       kind: Deployment
