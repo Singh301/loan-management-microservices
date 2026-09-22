@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CLUSTER="loan-management-cluster"
+CLUSTER="loan-management-eks"
 REGION="ap-south-1"
 NAMESPACE="loan-management"
 KUBECONFIG="${KUBECONFIG:-$HOME/.kube/eks-config}"
@@ -14,14 +14,20 @@ aws eks update-kubeconfig --region "$REGION" --name "$CLUSTER" --kubeconfig "$KU
 
 echo "==> Checking cluster"
 kubectl get nodes -o wide
-echo "==> Ensuring at least two worker nodes"
-MEDIUM_STATUS="$(aws eks describe-nodegroup --cluster-name "$CLUSTER" --nodegroup-name loan-management-workers-medium --region "$REGION" --query 'nodegroup.status' --output text 2>/dev/null || true)"
-if [[ "$MEDIUM_STATUS" == "ACTIVE" ]]; then
-  echo "    medium nodegroup is ACTIVE"
-else
-  echo "    medium nodegroup status: ${MEDIUM_STATUS:-NOT_FOUND}; scaling existing worker group to 2 nodes"
-  aws eks update-nodegroup-config     --cluster-name "$CLUSTER"     --nodegroup-name loan-management-workers     --scaling-config minSize=2,maxSize=2,desiredSize=2     --region "$REGION" >/dev/null
+echo "==> Checking managed node group"
+NODEGROUP="loan-management-ng"
+NODEGROUP_STATUS="$(aws eks describe-nodegroup --cluster-name "$CLUSTER" --nodegroup-name "$NODEGROUP" --region "$REGION" --query 'nodegroup.status' --output text 2>/dev/null || true)"
+if [[ "$NODEGROUP_STATUS" != "ACTIVE" ]]; then
+  echo "ERROR: node group $NODEGROUP is not ACTIVE (status: ${NODEGROUP_STATUS:-NOT_FOUND})" >&2
+  exit 1
 fi
+# t3.micro nodes have very limited pod capacity; keep the current 4-node baseline
+# so the AWS Load Balancer Controller and application workloads can be scheduled.
+aws eks update-nodegroup-config \
+  --cluster-name "$CLUSTER" \
+  --nodegroup-name "$NODEGROUP" \
+  --scaling-config minSize=4,maxSize=4,desiredSize=4 \
+  --region "$REGION" >/dev/null
 
 echo "==> Waiting for worker capacity"
 for i in {1..60}; do
