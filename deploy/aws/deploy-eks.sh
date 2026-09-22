@@ -43,16 +43,14 @@ echo "==> Applying AWS runtime infrastructure"
 kubectl apply -f "$ROOT/k8s/namespace.yaml"
 kubectl apply -f "$ROOT/k8s/redis.yaml"
 kubectl apply -f "$ROOT/k8s/kafka.yaml"
-kubectl apply -f "$ROOT/k8s/aws/app-secret-provider.yaml"
-kubectl apply -f "$ROOT/k8s/aws/secrets-serviceaccount.yaml"
-kubectl apply -f "$ROOT/k8s/aws/secret-sync.yaml"
+kubectl apply -f "$ROOT/k8s/aws/cluster-secret-store.yaml"
+kubectl apply -f "$ROOT/k8s/aws/external-secret.yaml"
 
-echo "==> Waiting for secrets, Redis, and Kafka"
-kubectl -n "$NAMESPACE" rollout status deployment/secret-sync --timeout=180s
-for i in {1..30}; do
-  if kubectl -n "$NAMESPACE" get secret loan-management-secrets >/dev/null 2>&1; then break; fi
-  sleep 5
-done
+echo "==> Waiting for External Secrets, Redis, and Kafka"
+kubectl -n "$NAMESPACE" wait \
+  --for=condition=Ready \
+  externalsecret/loan-management-secrets \
+  --timeout=180s
 kubectl -n "$NAMESPACE" get secret loan-management-secrets >/dev/null
 kubectl -n "$NAMESPACE" rollout status deployment/redis --timeout=180s
 kubectl -n "$NAMESPACE" rollout status deployment/zookeeper --timeout=180s
