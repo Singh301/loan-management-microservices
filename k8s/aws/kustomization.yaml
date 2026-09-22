@@ -11,9 +11,8 @@ resources:
   - ../loan-services.yaml
   - ../support-services.yaml
   - document-service-serviceaccount.yaml
-  - app-secret-provider.yaml
-  - secret-sync.yaml
-  - secrets-serviceaccount.yaml
+  - cluster-secret-store.yaml
+  - external-secret.yaml
   - ingress.yaml
   - ../aws-s3-network-policy.yaml
 
