@@ -11,7 +11,13 @@ spec:
       containers:
         - name: discovery-server
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -26,7 +32,13 @@ spec:
       containers:
         - name: api-gateway
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -41,7 +53,13 @@ spec:
       containers:
         - name: auth-service
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -56,7 +74,13 @@ spec:
       containers:
         - name: customer-service
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -71,7 +95,13 @@ spec:
       containers:
         - name: loan-service
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -86,7 +116,13 @@ spec:
       containers:
         - name: repayment-service
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -101,7 +137,13 @@ spec:
       containers:
         - name: document-service
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -116,7 +158,13 @@ spec:
       containers:
         - name: notification-service
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -131,7 +179,13 @@ spec:
       containers:
         - name: audit-service
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -146,4 +200,10 @@ spec:
       containers:
         - name: dashboard-service
           securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
