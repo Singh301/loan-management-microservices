@@ -23,10 +23,10 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
-          args: ["redis-server", "--appendonly", "yes"]
+          command: ["redis-server"]
+          args: ["--appendonly", "yes"]
           ports:
             - containerPort: 6379
-          command: ["redis-server"]
           securityContext:
             runAsUser: 999
             runAsGroup: 999
