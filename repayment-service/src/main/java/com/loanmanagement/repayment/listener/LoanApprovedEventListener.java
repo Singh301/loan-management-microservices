@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
-import org.springframework.retry.annotation.Backoff;
+import org.springframework.kafka.annotation.BackOff;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,7 +21,7 @@ public class LoanApprovedEventListener {
 
     @RetryableTopic(
             attempts = "4",
-            backoff = @Backoff(delay = 1000, multiplier = 2.0, maxDelay = 10000),
+            backOff = @BackOff(delay = 1000, multiplier = 2.0, maxDelay = 10000),
             dltTopicSuffix = ".DLT")
     @KafkaListener(topics = "loan.events", groupId = "repayment-service")
     public void onLoanEvent(DomainEvent event) {
