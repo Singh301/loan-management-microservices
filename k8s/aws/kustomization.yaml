@@ -21,3 +21,13 @@ patches:
         path: /spec/template/spec/imagePullSecrets
         value:
           - name: ghcr-secret
+
+  # Force a rollout whenever this production overlay changes so the GHCR :1.0.0
+  # images are pulled again after CI publishes the current commit.
+  - target:
+      kind: Deployment
+    patch: |
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          lms.deployment.version: "2026-09-28-flyway-kafka-fix"
