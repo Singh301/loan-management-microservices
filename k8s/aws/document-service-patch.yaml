@@ -8,8 +8,3 @@ spec:
     spec:
       serviceAccountName: document-service-aws
       automountServiceAccountToken: true
-      containers:
-        - name: document-service
-          env:
-            - name: DOCUMENT_STORAGE_TYPE
-              value: local
